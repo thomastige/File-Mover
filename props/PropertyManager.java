@@ -59,7 +59,6 @@ public class PropertyManager {
 	private static String getPropLocation() {
 		String loc = System.getProperty("user.dir");
 		File folder = new File(loc);
-		folder = folder;
 		return folder.toString() + File.separator + "props" + "";
 
 	}
