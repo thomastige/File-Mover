@@ -51,6 +51,7 @@ public class Reader {
 					if (newFile.exists()){
 						newFile.delete();
 					}
+					cleanUp(newFile.getName(), destFolder);
 					result.append(file + "\n");
 					file.renameTo(newFile);
 				}
@@ -60,4 +61,19 @@ public class Reader {
 		return result.toString();
 	}
 	
+	public void cleanUp(String fileName, String location){
+		File rootFolder = new File(location);
+		if (rootFolder.isDirectory()){
+			File[] contents = rootFolder.listFiles();
+			for (int i=0; i<contents.length; ++i){
+				if (contents[i].isDirectory()){
+					cleanUp(fileName, contents[i].getPath());
+				}else {
+					if (contents[i].getName().equals(fileName)){
+						contents[i].delete();
+					}
+				}
+			}
+		}
+	}
 }

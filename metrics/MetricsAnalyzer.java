@@ -3,9 +3,9 @@ package metrics;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class MetricsAnalyzer {
 
@@ -16,7 +16,7 @@ public class MetricsAnalyzer {
 	}
 
 	public Map<String, MetricsData> parse() throws IOException {
-		Map<String, MetricsData> result = new HashMap<String, MetricsData>();
+		Map<String, MetricsData> result = new TreeMap<String, MetricsData>();
 		File[] dirs = dir.listFiles();
 		for (int i = 0; i < dirs.length; ++i) {
 			if (dirs[i].isDirectory()) {
