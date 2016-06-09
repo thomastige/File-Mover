@@ -16,7 +16,8 @@ public class JSONBuilder {
 	private Map<String, Map<String, List<String>>> map;
 	private static final float hoursPerDay = (float) 7.5;
 	private static final float hoursIncrement = (float) 0.25;
-	private static final String DEFAULT_ROLE = "Developer";
+	private static final String DEFAULT_ROLE = "DEV";
+	private static final String DEFAULT_DESC = "Investigation";
 
 	public JSONBuilder(Map<String, Map<String, List<String>>> map) {
 		this.map = map;
@@ -28,7 +29,7 @@ public class JSONBuilder {
 		Iterator<String> it = map.keySet().iterator();
 		while (it.hasNext()) {
 			String unformattedDate = it.next();
-			DateFormat df = new SimpleDateFormat("d/mmm/yyyy");
+			DateFormat df = new SimpleDateFormat("dd/MMM/yy");
 			String formattedDate = df.format(new Date(Long.valueOf(unformattedDate)));
 			// sprintmap is pretty useless in this case
 			Map<String, List<String>> sprintMap = map.get(unformattedDate);
@@ -44,18 +45,18 @@ public class JSONBuilder {
 				String bug = getKey(bugIterator.next());
 				JSONBug jsonBug = new JSONBug();
 				jsonBug.setWorked(workedQueue.remove() + "");
-				jsonBug.setBilled("");
+				jsonBug.setBilled("0");
 				jsonBug.setBugNumber(bug);
 				jsonBug.setDate(formattedDate);
-				jsonBug.setDescription("");
+				jsonBug.setDescription(DEFAULT_DESC);
 				jsonBug.setRole(DEFAULT_ROLE);
 				result.append(jsonBug.toString());
-				result.append(",");
+				result.append(",\n");
 			}
 
 		}
-		result.setLength(result.length()-1);
-		return "\""+result.toString()+"\"";
+		result.setLength(result.length()-2);
+		return "["+result.toString()+"]";
 	}
 
 	private Queue<Float> getworkedQueue(List<String> allBugs) {
@@ -64,6 +65,9 @@ public class JSONBuilder {
 		Iterator it = allBugs.iterator();
 		float max = hoursPerDay / hoursIncrement;
 		for (int i = 0; i < max; ++i) {
+			if (values[i%values.length] == null){
+				values[i%values.length] = (float) 0;
+			}
 			values[i%values.length] += hoursIncrement;
 		}
 		List<Float> list = Arrays.asList(values);

@@ -27,6 +27,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.border.Border;
@@ -90,7 +91,7 @@ public class Gui {
 				if (parseResult != null && !"".equals(parseResult)) {
 					FolderParser parser = new FolderParser(destText.getText());
 					Map<String, Map<String, List<String>>> map = parser.parseFolder();
-					TableBuilder builder = new TableBuilder();
+					TableBuilder builder = new TableBuilder(destText.getText());
 					JSONBuilder jsonBuilder = new JSONBuilder(map);
 					
 					PrintWriter out = new PrintWriter(destText.getText() + File.separator + "note_log.txt");
@@ -98,8 +99,8 @@ public class Gui {
 					out.close();
 					
 					PrintWriter out2 = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
-					out.print(jsonBuilder.buildJSON());
-					out.close();
+					out2.print(jsonBuilder.buildJSON());
+					out2.close();
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -161,10 +162,13 @@ public class Gui {
 	private Timer timer;
 
 	public void buildGui() {
+		JPanel corePanel = new JPanel(new GridLayout(1, 1));
 		frame = new JFrame("File Mover");
 		JPanel panel = new JPanel();
 		panel.setLayout(new GridLayout(0, 2));
-
+		JTabbedPane tabbedPane = new JTabbedPane();
+		
+		
 		buildComponents();
 		frame.setJMenuBar(buildMenu());
 
@@ -181,7 +185,12 @@ public class Gui {
 		panel.add(startBtn);
 		panel.add(stopBtn);
 
-		frame.add(panel, BorderLayout.NORTH);
+		tabbedPane.add("File Mover", panel);
+		corePanel.add(tabbedPane);
+		frame.add(corePanel, BorderLayout.NORTH);
+		
+		//TODO: create new panel, add to this tabbed pane as tab #2
+		tabbedPane.add("JSON generator", new JPanel());
 
 		consoleText = new JTextArea(15, 0);
 		consoleText.setEditable(false);
@@ -270,6 +279,7 @@ public class Gui {
 	private JMenu getActionMenu(){
 		JMenu menu = new JMenu("Actions");
 		menu.add(getCreateTableItem());
+		menu.add(getJSON());
 		return menu;
 	}
 	
@@ -286,6 +296,28 @@ public class Gui {
 					out.print(builder.build());
 					out.close();
 				} catch (IOException | ParseException e) {
+					e.printStackTrace();
+				}
+			}
+			
+		});
+		return menuItem;
+	}
+	private JMenuItem getJSON(){
+		JMenuItem menuItem = new JMenuItem("Create JSON load file");
+		menuItem.addActionListener(new ActionListener(){
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				PrintWriter out;
+				try {
+					FolderParser parser = new FolderParser(destText.getText());
+					Map<String, Map<String, List<String>>> map = parser.parseFolder();
+					JSONBuilder jsonBuilder= new JSONBuilder(map);
+					out = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
+					out.print(jsonBuilder.buildJSON());
+					out.close();
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
