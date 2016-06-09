@@ -190,7 +190,7 @@ public class Gui {
 		frame.add(corePanel, BorderLayout.NORTH);
 		
 		//TODO: create new panel, add to this tabbed pane as tab #2
-		tabbedPane.add("JSON generator", new JPanel());
+		tabbedPane.add("JSON generator", getJSONPanel());
 
 		consoleText = new JTextArea(15, 0);
 		consoleText.setEditable(false);
@@ -324,6 +324,37 @@ public class Gui {
 			
 		});
 		return menuItem;
+	}
+	
+	private JPanel getJSONPanel(){
+		JPanel panel = new JPanel(new GridLayout(0, 2));
+		Border border = BorderFactory.createLineBorder(Color.BLACK);
+		
+		panel.add(getDisabledJButton("From date"));
+		JTextArea fromDateText = new JTextArea();
+		fromDateText.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+		panel.add(fromDateText);
+		
+		panel.add(getDisabledJButton("To date"));
+		JTextArea toDateText = new JTextArea();
+		toDateText.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+		panel.add(toDateText);
+		
+		panel.add(getGenerateButton());
+		
+		return panel;
+	}
+	
+	private JButton getGenerateButton() {
+		JButton button = new JButton();
+		button.setText("GENERATE");
+		return button;
+	}
+
+	private JButton getDisabledJButton(String label){
+		JButton button = new JButton(label);
+		button.setEnabled(false);
+		return button;
 	}
 
 }
