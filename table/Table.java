@@ -12,15 +12,21 @@ public class Table {
 	public static final String VERTICAL = "|";
 	public static final String CORNER = "+";
 	public static final String BLANK = " ";
-
+	
+	private Columns columns;
 	private List<Row> rows;
 	private Row currentRow;
 	Map<Integer, List<Integer>> normalizedWidths;
 
-	public Table() {
+	public Table(Columns columns) {
+		this.columns = columns;
 		rows = new ArrayList<Row>();
 		currentRow = new Row();
 		normalizedWidths = new HashMap<Integer, List<Integer>>();
+	}
+	
+	public Table() {
+		this(Columns.FREE);
 	}
 
 	public void newRow() {
@@ -44,6 +50,7 @@ public class Table {
 	}
 
 	public String render() {
+		normalizeCells();
 		StringBuilder renderBuilder = new StringBuilder();
 		Iterator<Row> it = rows.iterator();
 		int biggestRow = normalizeRowWidth();
@@ -108,5 +115,26 @@ public class Table {
 			}
 		}
 		return result;
+	}
+	
+	private void normalizeCells(){
+		if (columns == Columns.FIXED){
+			Iterator<Row> it = rows.iterator();
+			int cellLength = 0;
+			while (it.hasNext()){
+				Row row = it.next();
+				int numberOfCells = row.getCells().size();
+				if (numberOfCells > cellLength){
+					cellLength = numberOfCells;
+				}
+			}
+			it = rows.iterator();
+			while (it.hasNext()){
+				Row row = it.next();
+				while (row.getCells().size() < cellLength){
+					row.addCell("");
+				}
+			}
+		}
 	}
 }

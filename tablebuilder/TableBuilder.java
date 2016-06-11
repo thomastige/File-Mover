@@ -12,6 +12,7 @@ import java.util.Map;
 import metrics.MetricsAnalyzer;
 import metrics.MetricsData;
 import table.Alignment;
+import table.Columns;
 import table.Table;
 
 public class TableBuilder {
@@ -63,18 +64,19 @@ public class TableBuilder {
 
 		tables.append(table.render());
 
-		Table table2 = new Table();
-		table2.addCell("Sprint", Alignment.CENTER);
-		table2.addCell("Metrics", Alignment.CENTER);
-		table2.newRow();
+		Table table2 = new Table(Columns.FIXED);
 		MetricsAnalyzer analyzer = new MetricsAnalyzer(dir);
-		Map<String, MetricsData> results = analyzer.parse();
+		Map<String, List<MetricsData>> results = analyzer.parse();
 		Iterator<String> it2 = results.keySet().iterator();
 		while (it2.hasNext()) {
 			String key = it2.next();
-			String value = results.get(key).getStringValue();
+			List<MetricsData> metrics = results.get(key);
+			Iterator<MetricsData> metricsIt = metrics.iterator();
 			table2.addCell(key);
-			table2.addCell(value, Alignment.RIGHT);
+			while (metricsIt.hasNext()){
+				String value = metricsIt.next().getStringValue();
+				table2.addCell(value, Alignment.RIGHT);
+			}
 			table2.newRow();
 		}
 		table2.closeTable();

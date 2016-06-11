@@ -48,6 +48,8 @@ public class Gui {
 			PropertyManager.set("time", timeText.getText());
 			PropertyManager.set("prefix", prefixText.getText());
 			PropertyManager.set("separator", separatorText.getText());
+			PropertyManager.set("fromDateJSON", fromDateText.getText());
+			PropertyManager.set("toDateJSON", toDateText.getText());
 
 			try {
 				PropertyManager.dump();
@@ -92,15 +94,15 @@ public class Gui {
 					FolderParser parser = new FolderParser(destText.getText());
 					Map<String, Map<String, List<String>>> map = parser.parseFolder();
 					TableBuilder builder = new TableBuilder(destText.getText());
-					JSONBuilder jsonBuilder = new JSONBuilder(map);
+					//JSONBuilder jsonBuilder = new JSONBuilder(map);
 					
 					PrintWriter out = new PrintWriter(destText.getText() + File.separator + "note_log.txt");
 					out.print(builder.build());
 					out.close();
 					
-					PrintWriter out2 = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
-					out2.print(jsonBuilder.buildJSON());
-					out2.close();
+//					PrintWriter out2 = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
+//					out2.print(jsonBuilder.buildJSON());
+//					out2.close();
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -326,17 +328,20 @@ public class Gui {
 		return menuItem;
 	}
 	
+	private JTextArea fromDateText;
+	private JTextArea toDateText;
+	
 	private JPanel getJSONPanel(){
 		JPanel panel = new JPanel(new GridLayout(0, 2));
 		Border border = BorderFactory.createLineBorder(Color.BLACK);
 		
-		panel.add(getDisabledJButton("From date"));
-		JTextArea fromDateText = new JTextArea();
+		panel.add(getDisabledJButton("From date (yyyymmdd)"));
+		fromDateText = new JTextArea(PropertyManager.readProperty("fromDateJSON"));
 		fromDateText.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
 		panel.add(fromDateText);
 		
-		panel.add(getDisabledJButton("To date"));
-		JTextArea toDateText = new JTextArea();
+		panel.add(getDisabledJButton("To date (yyyymmdd)"));
+		toDateText = new JTextArea(PropertyManager.readProperty("toDateJSON"));
 		toDateText.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
 		panel.add(toDateText);
 		
@@ -348,6 +353,37 @@ public class Gui {
 	private JButton getGenerateButton() {
 		JButton button = new JButton();
 		button.setText("GENERATE");
+		button.addActionListener(new ActionListener(){
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				PrintWriter out;
+				DateFormat df = new SimpleDateFormat("yyyyMMdd");
+				try {
+					Date from = new Date(0);
+					Date to = new Date();
+					if (!"".equals(fromDateText.getText())){
+						from = df.parse(fromDateText.getText());
+					}
+					if (!"".equals(toDateText.getText())){
+						to = df.parse(toDateText.getText());
+					}
+					from = df.parse(fromDateText.getText());
+					to = df.parse(toDateText.getText());
+					FolderParser parser = new FolderParser(destText.getText());
+					Map<String, Map<String, List<String>>> map = parser.parseFolder();
+					JSONBuilder jsonBuilder= new JSONBuilder(map);
+					out = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
+					out.print(jsonBuilder.buildJSON(from, to));
+					out.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+			
+		});
 		return button;
 	}
 
