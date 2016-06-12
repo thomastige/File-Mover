@@ -1,15 +1,22 @@
 package jsonbuilder;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+
+import props.PropertyManager;
 
 public class JSONBuilder {
 
@@ -19,8 +26,13 @@ public class JSONBuilder {
 	private static final String DEFAULT_ROLE = "DEV";
 	private static final String DEFAULT_DESC = "Investigation";
 
-	public JSONBuilder(Map<String, Map<String, List<String>>> map) {
+	private String separator;
+	private String destPath;
+
+	public JSONBuilder(Map<String, Map<String, List<String>>> map, String separator, String destPath) {
 		this.map = map;
+		this.separator = separator;
+		this.destPath = destPath;
 	}
 
 	public String buildJSON() {
@@ -33,7 +45,7 @@ public class JSONBuilder {
 
 	public String buildJSON(Date fromDate, Date toDate) {
 		StringBuilder result = new StringBuilder();
-
+		Map<String, String> descriptionMap;
 		Iterator<String> it = map.keySet().iterator();
 		while (it.hasNext()) {
 			String unformattedDate = it.next();
@@ -43,6 +55,7 @@ public class JSONBuilder {
 				String formattedDate = df.format(entryDate);
 				// sprintmap is pretty useless in this case
 				Map<String, List<String>> sprintMap = map.get(unformattedDate);
+				descriptionMap = getDescriptionMap(sprintMap);
 				List<String> allBugs = new ArrayList<String>();
 				Iterator<String> it2 = sprintMap.keySet().iterator();
 				while (it2.hasNext()) {
@@ -58,7 +71,7 @@ public class JSONBuilder {
 					jsonBug.setBilled("0");
 					jsonBug.setBugNumber(bug);
 					jsonBug.setDate(formattedDate);
-					jsonBug.setDescription(DEFAULT_DESC);
+					jsonBug.setDescription(descriptionMap.get(bug));
 					jsonBug.setRole(DEFAULT_ROLE);
 					result.append(jsonBug.toString());
 					result.append(",\n");
@@ -86,6 +99,38 @@ public class JSONBuilder {
 
 	private String getKey(String bug) {
 		return bug.split(" - ")[0];
+	}
 
+	private Map<String, String> getDescriptionMap(Map<String, List<String>> map) {
+		Map<String, String> descriptionMap = new HashMap<String, String>();
+		Iterator<String> it = map.keySet().iterator();
+		while (it.hasNext()) {
+			String sprint = it.next();
+			List<String> bugs = map.get(sprint);
+			Iterator<String> bugIt = bugs.iterator();
+			while (bugIt.hasNext()) {
+				String desc = DEFAULT_DESC;
+				String bug = bugIt.next();
+				String path = destPath + (destPath.endsWith(File.separator) ? "" : File.separator) + sprint + File.separator + bug;
+				try {
+					List<String> contents = Files.readAllLines(Paths.get(path));
+					String firstLine = contents.get(0);
+					if (firstLine.startsWith("[__") && firstLine.endsWith("__]")) {
+						firstLine = firstLine.replace("[__", "").replace("__]", "");
+						String[] lines = firstLine.split(separator);
+						int position = Integer.parseInt(PropertyManager.readProperty("commentPosition"));
+						if (position <= lines.length) {
+							if (!"".equals(lines[position - 1])) {
+								desc = lines[position - 1];
+							}
+						}
+					}
+				} catch (IOException | NumberFormatException e) {
+					e.printStackTrace();
+				}
+				descriptionMap.put(getKey(bug), desc);
+			}
+		}
+		return descriptionMap;
 	}
 }

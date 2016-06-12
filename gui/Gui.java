@@ -281,7 +281,7 @@ public class Gui {
 	private JMenu getActionMenu(){
 		JMenu menu = new JMenu("Actions");
 		menu.add(getCreateTableItem());
-		menu.add(getJSON());
+//		menu.add(getJSON());
 		return menu;
 	}
 	
@@ -305,28 +305,28 @@ public class Gui {
 		});
 		return menuItem;
 	}
-	private JMenuItem getJSON(){
-		JMenuItem menuItem = new JMenuItem("Create JSON load file");
-		menuItem.addActionListener(new ActionListener(){
-			
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				PrintWriter out;
-				try {
-					FolderParser parser = new FolderParser(destText.getText());
-					Map<String, Map<String, List<String>>> map = parser.parseFolder();
-					JSONBuilder jsonBuilder= new JSONBuilder(map);
-					out = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
-					out.print(jsonBuilder.buildJSON());
-					out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			
-		});
-		return menuItem;
-	}
+//	private JMenuItem getJSON(){
+//		JMenuItem menuItem = new JMenuItem("Create JSON load file");
+//		menuItem.addActionListener(new ActionListener(){
+//			
+//			@Override
+//			public void actionPerformed(ActionEvent arg0) {
+//				PrintWriter out;
+//				try {
+//					FolderParser parser = new FolderParser(destText.getText());
+//					Map<String, Map<String, List<String>>> map = parser.parseFolder();
+//					JSONBuilder jsonBuilder= new JSONBuilder(map);
+//					out = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
+//					out.print(jsonBuilder.buildJSON());
+//					out.close();
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
+//			}
+//			
+//		});
+//		return menuItem;
+//	}
 	
 	private JTextArea fromDateText;
 	private JTextArea toDateText;
@@ -368,11 +368,9 @@ public class Gui {
 					if (!"".equals(toDateText.getText())){
 						to = df.parse(toDateText.getText());
 					}
-					from = df.parse(fromDateText.getText());
-					to = df.parse(toDateText.getText());
 					FolderParser parser = new FolderParser(destText.getText());
 					Map<String, Map<String, List<String>>> map = parser.parseFolder();
-					JSONBuilder jsonBuilder= new JSONBuilder(map);
+					JSONBuilder jsonBuilder= new JSONBuilder(map, separatorText.getText(), destText.getText());
 					out = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
 					out.print(jsonBuilder.buildJSON(from, to));
 					out.close();
