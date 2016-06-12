@@ -41,6 +41,8 @@ import tablebuilder.TableBuilder;
 //TODO: REFACTOR THE ENTIRE THING (YES, THE ENTIRE PROJECT)
 public class Gui {
 
+	public static final String JSON_TEMPO =  "JSON_tempo.txt";
+	
 	private final class ExitWindowListener extends WindowAdapter {
 		public void windowClosing(WindowEvent winEvt) {
 			PropertyManager.set("source", sourceText.getText());
@@ -346,6 +348,7 @@ public class Gui {
 		panel.add(toDateText);
 		
 		panel.add(getGenerateButton());
+		panel.add(getJSONConfigureButton());
 		
 		return panel;
 	}
@@ -371,7 +374,7 @@ public class Gui {
 					FolderParser parser = new FolderParser(destText.getText());
 					Map<String, Map<String, List<String>>> map = parser.parseFolder();
 					JSONBuilder jsonBuilder= new JSONBuilder(map, separatorText.getText(), destText.getText());
-					out = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
+					out = new PrintWriter(destText.getText() + File.separator + JSON_TEMPO);
 					out.print(jsonBuilder.buildJSON(from, to));
 					out.close();
 				} catch (IOException e) {
@@ -391,5 +394,24 @@ public class Gui {
 		return button;
 	}
 
+	private JButton getJSONConfigureButton(){
+		JButton button = new JButton();
+		button.setText("CONFIGURE");
+		
+		button.addActionListener(new ActionListener(){
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				try {
+					new JSONConfigurer(destText.getText() + File.separator + JSON_TEMPO);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			
+		});
+		return button;
+	}
+	
 }
 
