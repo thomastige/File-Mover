@@ -1,9 +1,13 @@
 package gui;
 
-import java.awt.BorderLayout;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -21,6 +25,7 @@ import javax.swing.JTextArea;
 import javax.swing.ScrollPaneConstants;
 
 import jsonbuilder.JSONBug;
+import jsonbuilder.JSONBuilder;
 
 public class JSONConfigurer extends JFrame {
 
@@ -30,9 +35,11 @@ public class JSONConfigurer extends JFrame {
 	private static final long serialVersionUID = 1L;
 
 	Map<String, List<JSONBug>> bugs;
+	String filePath;
 
 	public JSONConfigurer(String filePath) throws IOException {
 		super();
+		this.filePath = filePath;
 		this.bugs = readBugFile(filePath);
 		setContentPane(getPanel());
 		setVisible(true);
@@ -50,26 +57,26 @@ public class JSONConfigurer extends JFrame {
 	private JPanel getConfigurationPanel() {
 		JPanel panel = new JPanel();
 		panel.setLayout(new GridLayout(0, 7));
-		
+
 		Iterator<String> dateIt = bugs.keySet().iterator();
-		while (dateIt.hasNext()){
+		while (dateIt.hasNext()) {
 			String date = dateIt.next();
 			List<JSONBug> bugList = bugs.get(date);
 			Iterator<JSONBug> bugIt = bugList.iterator();
-			while (bugIt.hasNext()){
+			while (bugIt.hasNext()) {
 				JSONBug bug = bugIt.next();
-				panel.add(new JTextArea(bug.getBugNumber()));
-				panel.add(new JTextArea(bug.getDate()));
-				panel.add(new JTextArea(bug.getWorked()));
-				panel.add(new JTextArea(bug.getBilled()));
-				panel.add(new JTextArea(bug.getDescription()));
-				panel.add(new JTextArea(bug.getRole()));
+				panel.add(new CustomTextArea(bug.getBugNumber()));
+				panel.add(new CustomTextArea(bug.getDate()));
+				panel.add(new CustomTextArea(bug.getWorked()));
+				panel.add(new CustomTextArea(bug.getBilled()));
+				panel.add(new CustomTextArea(bug.getDescription()));
+				panel.add(new CustomTextArea(bug.getRole()));
 				JCheckBox overridden = new JCheckBox();
-				overridden.setEnabled(false);
+				// overridden.setEnabled(false);
 				panel.add(overridden);
 			}
 		}
-		
+
 		return panel;
 	}
 
@@ -108,10 +115,132 @@ public class JSONConfigurer extends JFrame {
 		return list;
 	}
 
+	private String recalculate() {
+		StringBuilder output = new StringBuilder();
+		List<JSONBug> list = new ArrayList<JSONBug>();
+		Map<String, String> overriddenHours = new HashMap<String, String>();
+		for (int i = 0; i < ((Container) ((Container) (Container) getContentPane().getComponent(0)).getComponent(0)).getComponentCount(); ++i) {
+			String number = "";
+			String date = "";
+			String worked = "";
+			String billed = "";
+			String description = "";
+			String role = "";
+			boolean overridden = false;
+			
+			if (((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i) instanceof CustomTextArea) {
+				number = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				date = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				worked = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				billed = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				description = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				role = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+			} if (((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i) instanceof JCheckBox) {
+				overridden = ((JCheckBox) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i)).isSelected();
+				if (overridden) {
+					overriddenHours.put(number, worked);
+				}
+			}
+			JSONBug bug = new JSONBug();
+			bug.setBugNumber(number);
+			bug.setDate(date);
+			bug.setWorked(worked);
+			bug.setBilled(billed);
+			bug.setDescription(description);
+			bug.setRole(role);
+			list.add(bug);
+		}
+		getworkedQueue(overriddenHours);
+		Iterator<JSONBug> it = list.iterator();
+		while (it.hasNext()) {
+			output.append(it.next());
+			if (it.hasNext()) {
+				output.append(",");
+			}
+		}
+		return "[" + output.toString() + "]";
+	}
+
 	private JButton getDisabledButton(String label) {
 		JButton button = new JButton(label);
 		button.setEnabled(false);
 		return button;
 	}
 
+	private void getworkedQueue(Map<String, String> overriddenHours) {
+		Iterator<String> it = bugs.keySet().iterator();
+		while (it.hasNext()) {
+			String date = it.next();
+			List<JSONBug> bugsPerDate = bugs.get(date);
+			Float[] values = new Float[bugsPerDate.size()];
+			float max = JSONBuilder.hoursPerDay - getOverriddenTotal(overriddenHours, bugsPerDate) / JSONBuilder.hoursIncrement;
+			for (int i = 0; i < max; ++i) {
+				if (values[i % values.length] == null) {
+					values[i % values.length] = (float) 0;
+				}
+				values[i % values.length] += JSONBuilder.hoursIncrement;
+			}
+			int counter = 0;
+			Iterator<JSONBug> it2 = bugsPerDate.iterator();
+			while (it2.hasNext()) {
+				JSONBug bug = it2.next();
+				if (overriddenHours.containsKey(bug.getBugNumber())) {
+					bug.setWorked(overriddenHours.get(bug.getBugNumber()));
+				} else {
+					bug.setWorked(values[counter++] + "");
+				}
+			}
+
+		}
+	}
+
+	private float getOverriddenTotal(Map<String, String> overriddenMap, List<JSONBug> bugs) {
+		float result = 0;
+		Iterator<JSONBug> it = bugs.iterator();
+		while (it.hasNext()) {
+			JSONBug bug = it.next();
+			if (overriddenMap.containsKey(bug.getBugNumber())) {
+				result += Float.valueOf(overriddenMap.get(bug.getBugNumber()));
+			}
+		}
+		return result;
+	}
+
+	private class CustomTextArea extends JTextArea {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		public CustomTextArea() {
+			this("");
+		}
+
+		public CustomTextArea(String label) {
+			super(label);
+			this.addFocusListener(new FocusListener() {
+
+				@Override
+				public void focusGained(FocusEvent arg0) {
+					// TODO Auto-generated method stub
+
+				}
+
+				@Override
+				public void focusLost(FocusEvent arg0) {
+					String recalculated = recalculate();
+					PrintWriter out;
+					try {
+						out = new PrintWriter(filePath);
+						out.print(recalculated);
+						out.close();
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					}
+				}
+
+			});
+		}
+
+	}
 }

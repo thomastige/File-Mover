@@ -21,8 +21,8 @@ import props.PropertyManager;
 public class JSONBuilder {
 
 	private Map<String, Map<String, List<String>>> map;
-	private static final float hoursPerDay = (float) 7.5;
-	private static final float hoursIncrement = (float) 0.25;
+	public static final float hoursPerDay = (float) 7.5;
+	public static final float hoursIncrement = (float) 0.25;
 	private static final String DEFAULT_ROLE = "DEV";
 	private static final String DEFAULT_DESC = "Investigation";
 
