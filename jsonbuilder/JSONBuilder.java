@@ -82,6 +82,10 @@ public class JSONBuilder {
 		return "[" + result.toString() + "]";
 	}
 
+	// TODO: Extract in a new class, add a second parameter for a map<String,
+	// Float> that will indicate whether an element was overridden. If so, use
+	// that. Otherwise, dispatch the rest. To be used in the JSON Configurer as
+	// well.
 	private Queue<Float> getworkedQueue(List<String> allBugs) {
 		Queue<Float> queue = new LinkedList<Float>();
 		Float[] values = new Float[allBugs.size()];
