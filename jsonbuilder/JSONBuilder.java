@@ -115,17 +115,21 @@ public class JSONBuilder {
 			while (bugIt.hasNext()) {
 				String desc = DEFAULT_DESC;
 				String bug = bugIt.next();
-				String path = destPath + (destPath.endsWith(File.separator) ? "" : File.separator) + sprint + File.separator + bug;
+				String path = destPath + (destPath.endsWith(File.separator) ? "" : File.separator) + sprint
+						+ File.separator + bug;
 				try {
 					List<String> contents = Files.readAllLines(Paths.get(path));
 					String firstLine = contents.get(0);
 					if (firstLine.startsWith("[__") && firstLine.endsWith("__]")) {
 						firstLine = firstLine.replace("[__", "").replace("__]", "");
 						String[] lines = firstLine.split(separator);
-						int position = Integer.parseInt(PropertyManager.readProperty("commentPosition"));
-						if (position <= lines.length) {
-							if (!"".equals(lines[position - 1])) {
-								desc = lines[position - 1];
+						String positionProp = PropertyManager.readProperty("commentPosition");
+						if (positionProp != null) {
+							int position = Integer.parseInt(positionProp);
+							if (position != 0 && position <= lines.length) {
+								if (!"".equals(lines[position - 1])) {
+									desc = lines[position - 1];
+								}
 							}
 						}
 					}
