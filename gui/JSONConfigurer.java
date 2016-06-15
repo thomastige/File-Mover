@@ -1,7 +1,6 @@
 package gui;
 
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -12,13 +11,17 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
-import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -37,11 +40,11 @@ public class JSONConfigurer extends JFrame {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	Map<String, List<JSONBug>> bugs;
+	Map<Date, List<JSONBug>> bugs;
 	String filePath;
 	boolean refresh = false;
 
-	public JSONConfigurer(String filePath) throws IOException {
+	public JSONConfigurer(String filePath) throws IOException, ParseException {
 		super();
 		this.filePath = filePath;
 		this.bugs = readBugFile(filePath);
@@ -67,18 +70,17 @@ public class JSONConfigurer extends JFrame {
 		pack();
 	}
 
-	public void refresh() throws IOException{
+	public void refresh() throws IOException, ParseException {
 		refresh = true;
 		removeAll();
 		this.bugs = readBugFile(filePath);
 		setContentPane(getPanel());
 		refresh = false;
 	}
-	
+
 	private JScrollPane getPanel() {
-		JScrollPane scrollPane = new JScrollPane(getConfigurationPanel(),
-				ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		scrollPane.setPreferredSize(new Dimension(800, 600));
+		JScrollPane scrollPane = new JScrollPane(getConfigurationPanel(), ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		return scrollPane;
 	}
@@ -87,9 +89,9 @@ public class JSONConfigurer extends JFrame {
 		JPanel panel = new JPanel();
 		panel.setLayout(new GridLayout(0, 7));
 
-		Iterator<String> dateIt = bugs.keySet().iterator();
+		Iterator<Date> dateIt = bugs.keySet().iterator();
 		while (dateIt.hasNext()) {
-			String date = dateIt.next();
+			Date date = dateIt.next();
 			List<JSONBug> bugList = bugs.get(date);
 			Iterator<JSONBug> bugIt = bugList.iterator();
 			while (bugIt.hasNext()) {
@@ -101,6 +103,9 @@ public class JSONConfigurer extends JFrame {
 				panel.add(new CustomTextArea(bug.getDescription()));
 				panel.add(new CustomTextArea(bug.getRole()));
 				JCheckBox overridden = new JCheckBox();
+				if ((Boolean.TRUE + "").equals(bug.getOverride())) {
+					overridden.setSelected(true);
+				}
 				// overridden.setEnabled(false);
 				panel.add(overridden);
 			}
@@ -109,8 +114,8 @@ public class JSONConfigurer extends JFrame {
 		return panel;
 	}
 
-	private Map<String, List<JSONBug>> readBugFile(String filePath) throws IOException {
-		Map<String, List<JSONBug>> list = new HashMap<String, List<JSONBug>>();
+	private Map<Date, List<JSONBug>> readBugFile(String filePath) throws IOException, ParseException {
+		Map<Date, List<JSONBug>> list = new TreeMap<Date, List<JSONBug>>();
 
 		List<String> lines = Files.readAllLines(Paths.get(filePath));
 		lines.set(0, lines.get(0).substring(1));
@@ -129,16 +134,18 @@ public class JSONConfigurer extends JFrame {
 				}
 				JSONBug bug = new JSONBug();
 				String date = mapping.get("date");
+				DateFormat df = new SimpleDateFormat("d/MMM/yy");
 				bug.setBilled(mapping.get("billed").replaceAll("h", ""));
 				bug.setBugNumber(mapping.get("bugNumber"));
 				bug.setDate(date);
 				bug.setDescription(mapping.get("description"));
 				bug.setRole(mapping.get("Role"));
 				bug.setWorked(mapping.get("worked").replaceAll("h", ""));
-				if (list.get(date) == null) {
-					list.put(date, new ArrayList<JSONBug>());
+				bug.setOverride(mapping.get("Override"));
+				if (list.get(df.parse(date)) == null) {
+					list.put(df.parse(date), new ArrayList<JSONBug>());
 				}
-				list.get(date).add(bug);
+				list.get(df.parse(date)).add(bug);
 
 			}
 		}
@@ -150,8 +157,7 @@ public class JSONConfigurer extends JFrame {
 		StringBuilder output = new StringBuilder();
 		List<JSONBug> list = new ArrayList<JSONBug>();
 		Map<String, String> overriddenHours = new HashMap<String, String>();
-		for (int i = 0; i < ((Container) ((Container) (Container) getContentPane().getComponent(0)).getComponent(0))
-				.getComponentCount(); ++i) {
+		for (int i = 0; i < ((Container) ((Container) (Container) getContentPane().getComponent(0)).getComponent(0)).getComponentCount(); ++i) {
 			String number = "";
 			String date = "";
 			String worked = "";
@@ -160,25 +166,16 @@ public class JSONConfigurer extends JFrame {
 			String role = "";
 			boolean overridden = false;
 
-			if (((Container) ((Container) getContentPane().getComponent(0)).getComponent(0))
-					.getComponent(i) instanceof CustomTextArea) {
-				number = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0))
-						.getComponent(i++)).getText();
-				date = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0))
-						.getComponent(i++)).getText();
-				worked = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0))
-						.getComponent(i++)).getText();
-				billed = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0))
-						.getComponent(i++)).getText();
-				description = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0))
-						.getComponent(0)).getComponent(i++)).getText();
-				role = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0))
-						.getComponent(i++)).getText();
+			if (((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i) instanceof CustomTextArea) {
+				number = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				date = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				worked = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				billed = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				description = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
+				role = ((CustomTextArea) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i++)).getText();
 			}
-			if (((Container) ((Container) getContentPane().getComponent(0)).getComponent(0))
-					.getComponent(i) instanceof JCheckBox) {
-				overridden = ((JCheckBox) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0))
-						.getComponent(i)).isSelected();
+			if (((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i) instanceof JCheckBox) {
+				overridden = ((JCheckBox) ((Container) ((Container) getContentPane().getComponent(0)).getComponent(0)).getComponent(i)).isSelected();
 				if (overridden) {
 					overriddenHours.put(number, worked);
 				}
@@ -190,6 +187,7 @@ public class JSONConfigurer extends JFrame {
 			bug.setBilled(billed);
 			bug.setDescription(description);
 			bug.setRole(role);
+			bug.setOverride(overridden + "");
 			list.add(bug);
 		}
 		list = getworkedQueue(overriddenHours);
@@ -211,16 +209,15 @@ public class JSONConfigurer extends JFrame {
 
 	private List<JSONBug> getworkedQueue(Map<String, String> overriddenHours) {
 		List<JSONBug> list = new ArrayList<JSONBug>();
-		Iterator<String> it = bugs.keySet().iterator();
+		Iterator<Date> it = bugs.keySet().iterator();
 		while (it.hasNext()) {
-			String date = it.next();
+			Date date = it.next();
 			List<JSONBug> bugsPerDate = bugs.get(date);
 			Float[] values = new Float[bugsPerDate.size() - overridesForDate(overriddenHours, bugsPerDate)];
 			for (int i = 0; i < values.length; ++i) {
 				values[i] = (float) 0.0;
 			}
-			float max = (JSONBuilder.hoursPerDay - getOverriddenTotal(overriddenHours, bugsPerDate))
-					/ JSONBuilder.hoursIncrement;
+			float max = (JSONBuilder.hoursPerDay - getOverriddenTotal(overriddenHours, bugsPerDate)) / JSONBuilder.hoursIncrement;
 			for (int i = 0; i < max; ++i) {
 				if (values[i % values.length] == null) {
 					values[i % values.length] = (float) 0;
@@ -290,14 +287,12 @@ public class JSONConfigurer extends JFrame {
 
 				@Override
 				public void focusLost(FocusEvent arg0) {
-					if (!refresh && !((JTextArea) arg0.getComponent()).getText().startsWith("PMO")) {
-						recalculate();
-//						 try {
-//						 refresh();
-//						 } catch (IOException e) {
-//						 e.printStackTrace();
-//						 }
-					}
+					recalculate();
+					// try {
+					// refresh();
+					// } catch (IOException e) {
+					// e.printStackTrace();
+					// }
 				}
 
 			});

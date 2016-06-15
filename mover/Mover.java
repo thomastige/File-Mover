@@ -1,4 +1,4 @@
-package reader;
+package mover;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class Reader {
+public class Mover {
 
 	private String prefix = "";
 	private String separator = "_";
@@ -14,18 +14,18 @@ public class Reader {
 	private String sourceFolder;
 	private String destFolder;
 
-	public Reader(String sourceFolder, String destFolder) {
+	public Mover(String sourceFolder, String destFolder) {
 		this.sourceFolder = sourceFolder;
 		this.destFolder = destFolder;
 	}
 
-	public Reader(String sourceFolder, String destFolder, String prefix) {
+	public Mover(String sourceFolder, String destFolder, String prefix) {
 		this.sourceFolder = sourceFolder;
 		this.destFolder = destFolder;
 		this.prefix = prefix;
 	}
 
-	public Reader(String sourceFolder, String destFolder, String prefix, String separator) {
+	public Mover(String sourceFolder, String destFolder, String prefix, String separator) {
 		this.sourceFolder = sourceFolder;
 		this.destFolder = destFolder;
 		this.prefix = prefix;
@@ -54,12 +54,14 @@ public class Reader {
 					removeDuplicates(file, list);
 					File newFile = new File(newPath);
 					newFile.getParentFile().mkdirs();
+					Merger merger = new Merger(file.getPath(), newFile.getPath());
 					if (newFile.exists()) {
 						newFile.delete();
 					}
 					cleanUp(newFile.getName(), destFolder);
 					result.append(file + "\n");
-					file.renameTo(newFile);
+//					file.renameTo(newFile);
+					merger.mergeIntoDest();
 				}
 			}
 

@@ -33,8 +33,8 @@ import javax.swing.Timer;
 import javax.swing.border.Border;
 
 import jsonbuilder.JSONBuilder;
+import mover.Mover;
 import props.PropertyManager;
-import reader.Reader;
 import tablebuilder.FolderParser;
 import tablebuilder.TableBuilder;
 
@@ -84,7 +84,7 @@ public class Gui {
 	private final class TimerListener implements ActionListener {
 		public void actionPerformed(ActionEvent evt) {
 
-			Reader reader = new Reader(sourceText.getText(), destText.getText(), prefixText.getText(),
+			Mover reader = new Mover(sourceText.getText(), destText.getText(), prefixText.getText(),
 					separatorText.getText());
 			try {
 				DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -404,7 +404,7 @@ public class Gui {
 			public void actionPerformed(ActionEvent arg0) {
 				try {
 					new JSONConfigurer(destText.getText() + File.separator + JSON_TEMPO);
-				} catch (IOException e) {
+				} catch (IOException | ParseException e) {
 					e.printStackTrace();
 				}
 			}

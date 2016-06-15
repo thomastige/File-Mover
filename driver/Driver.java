@@ -9,8 +9,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import gui.Gui;
+import mover.Mover;
 import props.PropertyManager;
-import reader.Reader;
 
 public class Driver {
 

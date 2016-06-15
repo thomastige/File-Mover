@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Queue;
 
 import props.PropertyManager;
+import table.Table;
 
 public class JSONBuilder {
 
@@ -25,14 +27,19 @@ public class JSONBuilder {
 	public static final float hoursIncrement = (float) 0.25;
 	private static final String DEFAULT_ROLE = "DEV";
 	private static final String DEFAULT_DESC = "Investigation";
+	private static final String DEFAULT_OVERRIDE = "false";
 
 	private String separator;
 	private String destPath;
+
+	// bug id, then date gives the value
+	private Map<String, Map<String, List<String>>> overrideMap;
 
 	public JSONBuilder(Map<String, Map<String, List<String>>> map, String separator, String destPath) {
 		this.map = map;
 		this.separator = separator;
 		this.destPath = destPath;
+		this.overrideMap = new HashMap<String, Map<String, List<String>>>();
 	}
 
 	public String buildJSON() {
@@ -73,6 +80,25 @@ public class JSONBuilder {
 					jsonBug.setDate(formattedDate);
 					jsonBug.setDescription(descriptionMap.get(bug));
 					jsonBug.setRole(DEFAULT_ROLE);
+					jsonBug.setOverride(DEFAULT_OVERRIDE);
+
+					Map<String, List<String>> bugOverrides = overrideMap.get(bug);
+					DateFormat dfoverride = new SimpleDateFormat("dd MMM yyyy");
+					String overrideDate = dfoverride.format(entryDate).toUpperCase();
+					if (bugOverrides != null && bugOverrides.get(overrideDate) != null && !bugOverrides.get(overrideDate).isEmpty()) {
+						List<String> overrides = bugOverrides.get(overrideDate);
+						Iterator<String> overrideIterator = overrides.iterator();
+						while (overrideIterator.hasNext()) {
+							String or = overrideIterator.next();
+							String[] split = or.split(":");
+							if (split.length == 2 && !"".equals(split[1])) {
+								if ("worked".equals(split[0])) {
+									jsonBug.setWorked(split[1]);
+									jsonBug.setOverride("true");
+								}
+							}
+						}
+					}
 					result.append(jsonBug.toString());
 					result.append(",\n");
 				}
@@ -115,8 +141,7 @@ public class JSONBuilder {
 			while (bugIt.hasNext()) {
 				String desc = DEFAULT_DESC;
 				String bug = bugIt.next();
-				String path = destPath + (destPath.endsWith(File.separator) ? "" : File.separator) + sprint
-						+ File.separator + bug;
+				String path = destPath + (destPath.endsWith(File.separator) ? "" : File.separator) + sprint + File.separator + bug;
 				try {
 					List<String> contents = Files.readAllLines(Paths.get(path));
 					String firstLine = contents.get(0);
@@ -133,6 +158,15 @@ public class JSONBuilder {
 							}
 						}
 					}
+
+					Iterator<String> lineIt = contents.iterator();
+					while (lineIt.hasNext()) {
+						Map<String, List<String>> overrideMap = getOverrides(lineIt);
+						if (this.overrideMap.get(getKey(bug)) == null || this.overrideMap.get(getKey(bug)).isEmpty()) {
+							this.overrideMap.put(getKey(bug), overrideMap);
+						}
+					}
+
 				} catch (IOException | NumberFormatException e) {
 					e.printStackTrace();
 				}
@@ -140,5 +174,47 @@ public class JSONBuilder {
 			}
 		}
 		return descriptionMap;
+	}
+
+	private Map<String, List<String>> getOverrides(Iterator<String> it) {
+		String line = it.next();
+		Map<String, List<String>> overrideMap = new HashMap<String, List<String>>();
+		if (line.length() > 1 && line.startsWith(Table.CORNER) && line.endsWith(Table.CORNER)
+				&& line.substring(1, line.length() - 1).matches("[" + Table.HORIZONTAL + "]*")) {
+			StringBuilder potentialTimeBlock = new StringBuilder();
+			potentialTimeBlock.append(line + "\n");
+			if (it.hasNext()) {
+				String secondLine = it.next();
+				// check if timestamp date
+				if (secondLine.length() > 1 && secondLine.startsWith(Table.VERTICAL) && secondLine.endsWith(Table.VERTICAL)) {
+					String trimmedLine = secondLine.substring(1, secondLine.length() - 1).trim();
+					DateFormat df = new SimpleDateFormat("dd MMM yyyy");
+					Date date = null;
+					try {
+						date = df.parse(trimmedLine);
+					} catch (ParseException e) {
+						// TODO: fix this, it's just a check to see if the line
+						// is a date or not
+					}
+					if (date != null) {
+						String nextLine = it.next();
+						// check if time override
+						if (nextLine.length() > 1 && nextLine.startsWith(Table.VERTICAL) && secondLine.endsWith(Table.VERTICAL)) {
+							potentialTimeBlock.append(nextLine + "\n");
+							while (!nextLine.startsWith(Table.CORNER)) {
+								String override = nextLine.substring(1, nextLine.length() - 2).trim();
+								if (!overrideMap.containsKey(trimmedLine)) {
+									overrideMap.put(trimmedLine, new ArrayList<String>());
+								}
+								overrideMap.get(trimmedLine).add(override);
+								nextLine = it.next();
+							}
+							nextLine = it.next();
+						}
+					}
+				}
+			}
+		}
+		return overrideMap;
 	}
 }
