@@ -71,10 +71,11 @@ public class JSONBuilder {
 				}
 				Iterator<String> bugIterator = allBugs.iterator();
 				Queue<Float> workedQueue = getworkedQueue(allBugs);
+				List<JSONBug> bugList = new ArrayList<JSONBug>();
 				while (bugIterator.hasNext()) {
 					String bug = getKey(bugIterator.next());
 					JSONBug jsonBug = new JSONBug();
-					jsonBug.setWorked(workedQueue.remove() + "");
+					// jsonBug.setWorked(workedQueue.remove() + "");
 					jsonBug.setBilled("0");
 					jsonBug.setBugNumber(bug);
 					jsonBug.setDate(formattedDate);
@@ -99,13 +100,71 @@ public class JSONBuilder {
 							}
 						}
 					}
-					result.append(jsonBug.toString());
+					bugList.add(jsonBug);
+				}
+				bugList = calculateWork(bugList);
+				Iterator bugIt = bugList.iterator();
+				while (bugIt.hasNext()) {
+					result.append(bugIt.next().toString());
 					result.append(",\n");
 				}
 			}
 		}
 		result.setLength(result.length() - 2);
 		return "[" + result.toString() + "]";
+	}
+
+	private List<JSONBug> calculateWork(List<JSONBug> bugList) {
+		List<JSONBug> result = new ArrayList<JSONBug>();
+		Map<String, List<JSONBug>> map = new HashMap<String, List<JSONBug>>();
+		Iterator<JSONBug> it = bugList.iterator();
+		while (it.hasNext()) {
+			JSONBug bug = it.next();
+			if (map.get(bug.getDate()) == null) {
+				map.put(bug.getDate(), new ArrayList<JSONBug>());
+			}
+			map.get(bug.getDate()).add(bug);
+		}
+		Iterator<String> dateIt = map.keySet().iterator();
+		while (dateIt.hasNext()) {
+			List<JSONBug> overridden = new ArrayList<JSONBug>();
+			String key = dateIt.next();
+			List<JSONBug> listPerDate = map.get(key);
+			float alreadyRegistered = 0;
+			Iterator<JSONBug> bugsForDate = listPerDate.iterator();
+			// set overridden time calculation
+			while (bugsForDate.hasNext()) {
+				JSONBug bug = bugsForDate.next();
+				if ("true".equals(bug.getOverride())) {
+					alreadyRegistered += Float.valueOf(bug.getWorked());
+					overridden.add(bug);
+					bugsForDate.remove();
+				}
+			}
+			// calculate the rest
+			bugsForDate = listPerDate.iterator();
+			Float[] values = new Float[listPerDate.size()];
+			float max = (hoursPerDay - alreadyRegistered) / hoursIncrement;
+			for (int i = 0; i < max; ++i) {
+				if (values[i % values.length] == null) {
+					values[i % values.length] = (float) 0;
+				}
+				values[i % values.length] += hoursIncrement;
+			}
+			//add to list
+			int counter = 0;
+			while (bugsForDate.hasNext()) {
+				JSONBug bug = bugsForDate.next();
+				if ("false".equals(bug.getOverride())) {
+					bug.setWorked(""+values[counter++]);
+				}
+				result.add(bug);
+			}
+			result.addAll(overridden);
+			
+		}
+		return result;
+
 	}
 
 	// TODO: Extract in a new class, add a second parameter for a map<String,
