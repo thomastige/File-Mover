@@ -27,7 +27,7 @@ public class MetricsData {
 		while (it.hasNext()) {
 			String key = it.next();
 			if (!"".equals(key.trim())) {
-				result.append(key + ":" + mappings.get(key) + " ");
+				result.append(key + ":" + mappings.get(key) + "\n");
 			}
 		}
 		return result.toString();

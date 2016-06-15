@@ -29,23 +29,40 @@ public class Row {
 
 	public String render(Map<Integer, List<Integer>> widthsMap, int tableSize) {
 		StringBuilder renderBuilder = new StringBuilder();
-		renderBuilder.append(Table.VERTICAL);
+		int height = getRowHeight();
 		List<Integer> widths = widthsMap.get(cells.size());
-		Iterator<Integer> it = widths.iterator();
-		int counter = 0;
-		Queue<Integer> pads = getNormalizationPaddings(tableSize - calculateWidth(widthsMap.get(cells.size())));
-		while (it.hasNext()) {
-			Integer width = it.next();
-			if (cells.size() >= counter) {
-				renderBuilder.append(cells.get(counter++).getPaddedContent(width + pads.remove()));
-				renderBuilder.append(Table.VERTICAL);
+		for (int i = 0; i < height; ++i) {
+			renderBuilder.append(Table.VERTICAL);
+			Queue<Integer> pads = getNormalizationPaddings(tableSize - calculateWidth(widthsMap.get(cells.size())));
+			Iterator<Integer> it = widths.iterator();
+			int counter = 0;
+			while (it.hasNext()) {
+				Integer width = it.next();
+				if (cells.size() >= counter) {
+					renderBuilder.append(cells.get(counter++).getPaddedContent(width + pads.remove(), i));
+					renderBuilder.append(Table.VERTICAL);
+				}
 			}
+			renderBuilder.append("\n");
 		}
 		return renderBuilder.toString();
 	}
 
 	public List<Cell> getCells() {
 		return cells;
+	}
+
+	public int getRowHeight() {
+		int result = 0;
+		Iterator<Cell> it = cells.iterator();
+		while (it.hasNext()) {
+			Cell cell = it.next();
+			int height = cell.getCellHeight();
+			if (height > result) {
+				result = height;
+			}
+		}
+		return result;
 	}
 
 	public void normalizeWidth(Map<Integer, List<Integer>> maxWidth) {

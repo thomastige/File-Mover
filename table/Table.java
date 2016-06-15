@@ -64,7 +64,6 @@ public class Table {
 			}
 			renderBuilder.append(createDelimiter(buffer, rowRepresentation, tableWidth + biggestRow));
 			renderBuilder.append(rowRepresentation);
-			renderBuilder.append("\n");
 			buffer = rowRepresentation;
 		}
 		renderBuilder.append(createDelimiter(buffer, buffer, tableWidth + biggestRow));

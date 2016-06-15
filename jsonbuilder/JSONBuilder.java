@@ -84,7 +84,7 @@ public class JSONBuilder {
 					jsonBug.setOverride(DEFAULT_OVERRIDE);
 
 					Map<String, List<String>> bugOverrides = overrideMap.get(bug);
-					DateFormat dfoverride = new SimpleDateFormat("dd MMM yyyy");
+					DateFormat dfoverride = new SimpleDateFormat("dd MMMM yyyy");
 					String overrideDate = dfoverride.format(entryDate).toUpperCase();
 					if (bugOverrides != null && bugOverrides.get(overrideDate) != null && !bugOverrides.get(overrideDate).isEmpty()) {
 						List<String> overrides = bugOverrides.get(overrideDate);
@@ -93,7 +93,7 @@ public class JSONBuilder {
 							String or = overrideIterator.next();
 							String[] split = or.split(":");
 							if (split.length == 2 && !"".equals(split[1])) {
-								if ("worked".equals(split[0])) {
+								if ("WORKED".equals(split[0].toUpperCase())) {
 									jsonBug.setWorked(split[1]);
 									jsonBug.setOverride("true");
 								}
