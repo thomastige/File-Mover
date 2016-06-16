@@ -28,6 +28,7 @@ public class JSONBuilder {
 	private static final String DEFAULT_ROLE = "DEV";
 	private static final String DEFAULT_DESC = "Investigation";
 	private static final String DEFAULT_OVERRIDE = "false";
+	private static final List<String> exceptions = new ArrayList<String>();
 
 	private String separator;
 	private String destPath;
@@ -36,6 +37,7 @@ public class JSONBuilder {
 	private Map<String, Map<String, List<String>>> overrideMap;
 
 	public JSONBuilder(Map<String, Map<String, List<String>>> map, String separator, String destPath) {
+
 		this.map = map;
 		this.separator = separator;
 		this.destPath = destPath;
@@ -86,7 +88,8 @@ public class JSONBuilder {
 					Map<String, List<String>> bugOverrides = overrideMap.get(bug);
 					DateFormat dfoverride = new SimpleDateFormat("dd MMMM yyyy");
 					String overrideDate = dfoverride.format(entryDate).toUpperCase();
-					if (bugOverrides != null && bugOverrides.get(overrideDate) != null && !bugOverrides.get(overrideDate).isEmpty()) {
+					if (bugOverrides != null && bugOverrides.get(overrideDate) != null
+							&& !bugOverrides.get(overrideDate).isEmpty()) {
 						List<String> overrides = bugOverrides.get(overrideDate);
 						Iterator<String> overrideIterator = overrides.iterator();
 						while (overrideIterator.hasNext()) {
@@ -96,6 +99,8 @@ public class JSONBuilder {
 								if ("WORKED".equals(split[0].toUpperCase())) {
 									jsonBug.setWorked(split[1]);
 									jsonBug.setOverride("true");
+								} else if ("COMMENT".equals(split[0].toUpperCase())) {
+									jsonBug.setDescription(split[1]);
 								}
 							}
 						}
@@ -151,17 +156,17 @@ public class JSONBuilder {
 				}
 				values[i % values.length] += hoursIncrement;
 			}
-			//add to list
+			// add to list
 			int counter = 0;
 			while (bugsForDate.hasNext()) {
 				JSONBug bug = bugsForDate.next();
 				if ("false".equals(bug.getOverride())) {
-					bug.setWorked(""+values[counter++]);
+					bug.setWorked("" + values[counter++]);
 				}
 				result.add(bug);
 			}
 			result.addAll(overridden);
-			
+
 		}
 		return result;
 
@@ -200,7 +205,8 @@ public class JSONBuilder {
 			while (bugIt.hasNext()) {
 				String desc = DEFAULT_DESC;
 				String bug = bugIt.next();
-				String path = destPath + (destPath.endsWith(File.separator) ? "" : File.separator) + sprint + File.separator + bug;
+				String path = destPath + (destPath.endsWith(File.separator) ? "" : File.separator) + sprint
+						+ File.separator + bug;
 				try {
 					List<String> contents = Files.readAllLines(Paths.get(path));
 					String firstLine = contents.get(0);
@@ -245,7 +251,8 @@ public class JSONBuilder {
 			if (it.hasNext()) {
 				String secondLine = it.next();
 				// check if timestamp date
-				if (secondLine.length() > 1 && secondLine.startsWith(Table.VERTICAL) && secondLine.endsWith(Table.VERTICAL)) {
+				if (secondLine.length() > 1 && secondLine.startsWith(Table.VERTICAL)
+						&& secondLine.endsWith(Table.VERTICAL)) {
 					String trimmedLine = secondLine.substring(1, secondLine.length() - 1).trim();
 					DateFormat df = new SimpleDateFormat("dd MMM yyyy");
 					Date date = null;
@@ -258,7 +265,8 @@ public class JSONBuilder {
 					if (date != null) {
 						String nextLine = it.next();
 						// check if time override
-						if (nextLine.length() > 1 && nextLine.startsWith(Table.VERTICAL) && secondLine.endsWith(Table.VERTICAL)) {
+						if (nextLine.length() > 1 && nextLine.startsWith(Table.VERTICAL)
+								&& secondLine.endsWith(Table.VERTICAL)) {
 							potentialTimeBlock.append(nextLine + "\n");
 							while (!nextLine.startsWith(Table.CORNER)) {
 								String override = nextLine.substring(1, nextLine.length() - 2).trim();
@@ -268,7 +276,9 @@ public class JSONBuilder {
 								overrideMap.get(trimmedLine).add(override);
 								nextLine = it.next();
 							}
-							nextLine = it.next();
+							if (it.hasNext()) {
+								nextLine = it.next();
+							}
 						}
 					}
 				}

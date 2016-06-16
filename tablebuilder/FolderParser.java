@@ -7,6 +7,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -107,7 +108,7 @@ public class FolderParser {
 	// TODO: write parsing algorithm?
 	private String extractDate(String line) {
 		String result = null;
-		String[] split = line.split(" ");
+		String[] split = removeEmpty(line.split(" "));
 		if (split.length == 3) {
 			if (isInteger(split[0]) && isInteger(split[2])) {
 				result = split[0] + DATE_SEPARATOR + split[1] + DATE_SEPARATOR + split[2];
@@ -133,6 +134,16 @@ public class FolderParser {
 		return result;
 	}
 
+	private String[] removeEmpty(String[] array){
+		 List<String> list = new ArrayList<String>();
+		    for(String s : array) {
+		       if(s != null && s.length() > 0) {
+		          list.add(s);
+		       }
+		    }
+		    return list.toArray(new String[list.size()]);
+	}
+	
 	private Map<String, Map<String, List<String>>> joinMaps(Map<String, Map<String, List<String>>> map1,
 			Map<String, Map<String, List<String>>> map2) {
 		/*

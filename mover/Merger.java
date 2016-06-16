@@ -92,7 +92,7 @@ public class Merger {
 								potentialTimeBlock.append(secondLine + "\n");
 								String nextLine = it.next();
 								// check if time override
-								if (nextLine.length() > 1 && nextLine.startsWith(TIMESTAMP_BLOCK_VERTICAL)
+								while (nextLine.length() > 1 && nextLine.startsWith(TIMESTAMP_BLOCK_VERTICAL)
 										&& secondLine.endsWith(TIMESTAMP_BLOCK_VERTICAL)) {
 									potentialTimeBlock.append(nextLine + "\n");
 									nextLine = it.next();

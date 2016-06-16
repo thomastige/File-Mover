@@ -52,7 +52,7 @@ public class Gui {
 			PropertyManager.set("separator", separatorText.getText());
 			PropertyManager.set("fromDateJSON", fromDateText.getText());
 			PropertyManager.set("toDateJSON", toDateText.getText());
-
+			
 			try {
 				PropertyManager.dump();
 			} catch (IOException e) {
