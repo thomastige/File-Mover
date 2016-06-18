@@ -56,12 +56,18 @@ public class FolderParser {
 			if (files[i].isDirectory()) {
 				result = joinMaps(result, parseFolder(files[i]));
 			} else {
-				result = joinMaps(result, mapDates(files[i]));
+				if (!isException(files[i].getName())){
+					result = joinMaps(result, mapDates(files[i]));
+				}
 			}
 		}
 		return result;
 	}
 
+	private boolean isException(String fileName) {
+		return "note_log.txt".equals(fileName) || "JSON_TEMPO.txt".equals(fileName);
+	}
+	
 	private Map<String, Map<String, List<String>>> mapDates(File file) throws IOException {
 		Map<String, Map<String, List<String>>> result = new TreeMap<String, Map<String, List<String>>>();
 

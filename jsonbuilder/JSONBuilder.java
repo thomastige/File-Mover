@@ -100,7 +100,7 @@ public class JSONBuilder {
 									jsonBug.setWorked(split[1]);
 									jsonBug.setOverride("true");
 								} else if ("COMMENT".equals(split[0].toUpperCase())) {
-									jsonBug.setDescription(split[1]);
+									jsonBug.setDescription(split[1].trim());
 								}
 							}
 						}
@@ -116,7 +116,7 @@ public class JSONBuilder {
 			}
 		}
 		result.setLength(result.length() - 2);
-		return "[" + result.toString() + "]";
+		return result.toString();
 	}
 
 	private List<JSONBug> calculateWork(List<JSONBug> bugList) {
