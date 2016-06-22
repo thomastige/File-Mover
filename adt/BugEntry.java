@@ -1,14 +1,22 @@
-package jsonbuilder;
+package adt;
 
-public class JSONBug {
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class BugEntry {
 
 	private String bugNumber;
-	private String date;
+	private Date date;
 	private String worked;
 	private String billed;
 	private String description;
 	private String role;
-	private String override;
+	// TODO: change override to boolean variable
+	private boolean override = false;
+	
+	private String fileName;
+	private String sprint;
 
 	public String getBugNumber() {
 		return bugNumber;
@@ -18,11 +26,11 @@ public class JSONBug {
 		this.bugNumber = bugNumber;
 	}
 
-	public String getDate() {
+	public Date getDate() {
 		return date;
 	}
 
-	public void setDate(String date) {
+	public void setDate(Date date) {
 		this.date = date;
 	}
 
@@ -58,16 +66,31 @@ public class JSONBug {
 		this.role = role;
 	}
 
-	public String getOverride() {
+	public boolean getOverride() {
 		return override;
 	}
 
-	public void setOverride(String override) {
+	public void setOverride(boolean override) {
 		this.override = override;
+	}
+	public String getFileName() {
+		return fileName;
+	}
+	
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
+	public String getSprint() {
+		return sprint;
+	}
+	
+	public void setSprint(String sprint) {
+		this.sprint = sprint;
 	}
 
 	public String toString() {
-		return "{\"bugNumber\" : \"" + bugNumber + "\", \"date\":\"" + date + "\", \"worked\" : \"" + worked
+		DateFormat df = new SimpleDateFormat("dd/MMM/yy");
+		return "{\"bugNumber\" : \"" + bugNumber + "\", \"date\":\"" + df.format(date) + "\", \"worked\" : \"" + worked
 				+ "h\", \"billed\":\"" + billed + "h\", \"description\" : \"" + description + "\", \"Role\" : \"" + role
 				+ "\", \"Override\" : \"" + override + "\"}";
 	}

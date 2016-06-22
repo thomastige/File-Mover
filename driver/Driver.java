@@ -1,15 +1,11 @@
 package driver;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import gui.Gui;
-import mover.Mover;
 import props.PropertyManager;
 
 public class Driver {

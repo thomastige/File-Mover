@@ -2,13 +2,13 @@ package tablebuilder;
 
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import adt.BugEntry;
 import metrics.MetricsAnalyzer;
 import metrics.MetricsData;
 import table.Alignment;
@@ -18,52 +18,43 @@ import table.Table;
 public class TableBuilder {
 
 	String dir;
-	
+
 	public TableBuilder() {
-		
 	}
-	
+
 	public TableBuilder(String loc) {
 		dir = loc;
 	}
-	public String build() throws IOException, ParseException {
-		FolderParser parser = new FolderParser(dir);
-		Map<String, Map<String, List<String>>> map = parser.parseFolder();
-		return build(map);
-	}
 
-	public String build(Map<String, Map<String, List<String>>> map) throws IOException, ParseException {
-		StringBuilder tables = new StringBuilder();
+	public String build(List<BugEntry> bugs) throws IOException {
+		StringBuilder result = new StringBuilder();
+
 		Table table = new Table();
-		Iterator<String> it = map.keySet().iterator();
+		Iterator<BugEntry> it = bugs.iterator();
+		
+		DateFormat df = new SimpleDateFormat("dd MMMM yyyy");
+		Date date = null;
+		String sprint = null;
 		while (it.hasNext()) {
-			String date = it.next();
-			Map<String, List<String>> sprintMap = map.get(date);
-			Iterator<String> it2 = sprintMap.keySet().iterator();
-			DateFormat df = new SimpleDateFormat("dd MMMM yyyy");
-			  
-			String formattedDate = df.format(new Date(Long.valueOf(date)));
-			table.addCell(formattedDate, Alignment.CENTER);
+			BugEntry bug = it.next();
 			table.newRow();
-			while (it2.hasNext()) {
-				String sprint = it2.next();
+			if (!bug.getDate().equals(date)) {
+				date = bug.getDate();
+				sprint = null;
+				table.addCell(df.format(date), Alignment.CENTER);
+				table.newRow();
+			}
+			if (!bug.getSprint().equals(sprint)){
+				sprint = bug.getSprint();
 				table.addCell(sprint);
 				table.newRow();
-				List<String> bugs = sprintMap.get(sprint);
-				Iterator<String> it3 = bugs.iterator();
-				while (it3.hasNext()){
-					String bug = it3.next();
-					table.addCell("");
-					table.addCell(bug);
-					table.newRow();
-				}
 			}
-
+			table.addCell("");
+			table.addCell(bug.getFileName());
 		}
 		table.closeTable();
-
-		tables.append(table.render());
-
+		result.append(table.render());
+		
 		Table table2 = new Table(Columns.FIXED);
 		MetricsAnalyzer analyzer = new MetricsAnalyzer(dir);
 		Map<String, List<MetricsData>> results = analyzer.parse();
@@ -73,7 +64,7 @@ public class TableBuilder {
 			List<MetricsData> metrics = results.get(key);
 			Iterator<MetricsData> metricsIt = metrics.iterator();
 			table2.addCell(key);
-			while (metricsIt.hasNext()){
+			while (metricsIt.hasNext()) {
 				String value = metricsIt.next().getStringValue();
 				table2.addCell(value, Alignment.RIGHT);
 			}
@@ -81,9 +72,10 @@ public class TableBuilder {
 		}
 		table2.closeTable();
 
-		tables.append(table2.render());
-
-		return tables.toString();
+		result.append(table2.render());
+		
+		
+		return result.toString();
 	}
-	
+
 }

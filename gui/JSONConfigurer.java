@@ -30,9 +30,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ScrollPaneConstants;
 
-import jsonbuilder.JSONBug;
-import jsonbuilder.JSONBuilder;
+import adt.BugEntry;
 
+//TODO: redo this entire thing
 public class JSONConfigurer extends JFrame {
 
 	/**
@@ -40,7 +40,7 @@ public class JSONConfigurer extends JFrame {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	Map<Date, List<JSONBug>> bugs;
+	Map<Date, List<BugEntry>> bugs;
 	String filePath;
 	boolean refresh = false;
 
@@ -92,12 +92,12 @@ public class JSONConfigurer extends JFrame {
 		Iterator<Date> dateIt = bugs.keySet().iterator();
 		while (dateIt.hasNext()) {
 			Date date = dateIt.next();
-			List<JSONBug> bugList = bugs.get(date);
-			Iterator<JSONBug> bugIt = bugList.iterator();
+			List<BugEntry> bugList = bugs.get(date);
+			Iterator<BugEntry> bugIt = bugList.iterator();
 			while (bugIt.hasNext()) {
-				JSONBug bug = bugIt.next();
+				BugEntry bug = bugIt.next();
 				panel.add(new CustomTextArea(bug.getBugNumber()));
-				panel.add(new CustomTextArea(bug.getDate()));
+//				panel.add(new CustomTextArea(bug.getDate()));
 				panel.add(new CustomTextArea(bug.getWorked()));
 				panel.add(new CustomTextArea(bug.getBilled()));
 				panel.add(new CustomTextArea(bug.getDescription()));
@@ -114,8 +114,8 @@ public class JSONConfigurer extends JFrame {
 		return panel;
 	}
 
-	private Map<Date, List<JSONBug>> readBugFile(String filePath) throws IOException, ParseException {
-		Map<Date, List<JSONBug>> list = new TreeMap<Date, List<JSONBug>>();
+	private Map<Date, List<BugEntry>> readBugFile(String filePath) throws IOException, ParseException {
+		Map<Date, List<BugEntry>> list = new TreeMap<Date, List<BugEntry>>();
 
 		List<String> lines = Files.readAllLines(Paths.get(filePath));
 		lines.set(0, lines.get(0).substring(1));
@@ -132,18 +132,18 @@ public class JSONConfigurer extends JFrame {
 					String[] keyValue = splitLine[i].split(":");
 					mapping.put(keyValue[0].replaceAll("\"", "").trim(), keyValue[1].replaceAll("\"", "").trim());
 				}
-				JSONBug bug = new JSONBug();
+				BugEntry bug = new BugEntry();
 				String date = mapping.get("date");
 				DateFormat df = new SimpleDateFormat("d/MMM/yy");
 				bug.setBilled(mapping.get("billed").replaceAll("h", ""));
 				bug.setBugNumber(mapping.get("bugNumber"));
-				bug.setDate(date);
+//				bug.setDate(date);
 				bug.setDescription(mapping.get("description"));
 				bug.setRole(mapping.get("Role"));
 				bug.setWorked(mapping.get("worked").replaceAll("h", ""));
-				bug.setOverride(mapping.get("Override"));
+//				bug.setOverride(mapping.get("Override"));
 				if (list.get(df.parse(date)) == null) {
-					list.put(df.parse(date), new ArrayList<JSONBug>());
+					list.put(df.parse(date), new ArrayList<BugEntry>());
 				}
 				list.get(df.parse(date)).add(bug);
 
@@ -155,7 +155,7 @@ public class JSONConfigurer extends JFrame {
 
 	private String recalculate() {
 		StringBuilder output = new StringBuilder();
-		List<JSONBug> list = new ArrayList<JSONBug>();
+		List<BugEntry> list = new ArrayList<BugEntry>();
 		Map<String, String> overriddenHours = new HashMap<String, String>();
 		for (int i = 0; i < ((Container) ((Container) (Container) getContentPane().getComponent(0)).getComponent(0)).getComponentCount(); ++i) {
 			String number = "";
@@ -180,18 +180,18 @@ public class JSONConfigurer extends JFrame {
 					overriddenHours.put(number, worked);
 				}
 			}
-			JSONBug bug = new JSONBug();
+			BugEntry bug = new BugEntry();
 			bug.setBugNumber(number);
-			bug.setDate(date);
+//			bug.setDate(date);
 			bug.setWorked(worked);
 			bug.setBilled(billed);
 			bug.setDescription(description);
 			bug.setRole(role);
-			bug.setOverride(overridden + "");
+//			bug.setOverride(overridden + "");
 			list.add(bug);
 		}
 		list = getworkedQueue(overriddenHours);
-		Iterator<JSONBug> it = list.iterator();
+		Iterator<BugEntry> it = list.iterator();
 		while (it.hasNext()) {
 			output.append(it.next());
 			if (it.hasNext()) {
@@ -207,27 +207,27 @@ public class JSONConfigurer extends JFrame {
 		return button;
 	}
 
-	private List<JSONBug> getworkedQueue(Map<String, String> overriddenHours) {
-		List<JSONBug> list = new ArrayList<JSONBug>();
+	private List<BugEntry> getworkedQueue(Map<String, String> overriddenHours) {
+		List<BugEntry> list = new ArrayList<BugEntry>();
 		Iterator<Date> it = bugs.keySet().iterator();
 		while (it.hasNext()) {
 			Date date = it.next();
-			List<JSONBug> bugsPerDate = bugs.get(date);
+			List<BugEntry> bugsPerDate = bugs.get(date);
 			Float[] values = new Float[bugsPerDate.size() - overridesForDate(overriddenHours, bugsPerDate)];
 			for (int i = 0; i < values.length; ++i) {
 				values[i] = (float) 0.0;
 			}
-			float max = (JSONBuilder.hoursPerDay - getOverriddenTotal(overriddenHours, bugsPerDate)) / JSONBuilder.hoursIncrement;
-			for (int i = 0; i < max; ++i) {
-				if (values[i % values.length] == null) {
-					values[i % values.length] = (float) 0;
-				}
-				values[i % values.length] += JSONBuilder.hoursIncrement;
-			}
+//			float max = (JSONBuilder.hoursPerDay - getOverriddenTotal(overriddenHours, bugsPerDate)) / JSONBuilder.hoursIncrement;
+//			for (int i = 0; i < max; ++i) {
+//				if (values[i % values.length] == null) {
+//					values[i % values.length] = (float) 0;
+//				}
+//				values[i % values.length] += JSONBuilder.hoursIncrement;
+//			}
 			int counter = 0;
-			Iterator<JSONBug> it2 = bugsPerDate.iterator();
+			Iterator<BugEntry> it2 = bugsPerDate.iterator();
 			while (it2.hasNext()) {
-				JSONBug bug = it2.next();
+				BugEntry bug = it2.next();
 				if (overriddenHours.containsKey(bug.getBugNumber())) {
 					bug.setWorked(overriddenHours.get(bug.getBugNumber()));
 				} else {
@@ -240,11 +240,11 @@ public class JSONConfigurer extends JFrame {
 		return list;
 	}
 
-	private float getOverriddenTotal(Map<String, String> overriddenMap, List<JSONBug> bugs) {
+	private float getOverriddenTotal(Map<String, String> overriddenMap, List<BugEntry> bugs) {
 		float result = 0;
-		Iterator<JSONBug> it = bugs.iterator();
+		Iterator<BugEntry> it = bugs.iterator();
 		while (it.hasNext()) {
-			JSONBug bug = it.next();
+			BugEntry bug = it.next();
 			if (overriddenMap.containsKey(bug.getBugNumber())) {
 				result += Float.valueOf(overriddenMap.get(bug.getBugNumber()));
 			}
@@ -252,10 +252,10 @@ public class JSONConfigurer extends JFrame {
 		return result;
 	}
 
-	private int overridesForDate(Map<String, String> overriddenMap, List<JSONBug> bugList) {
+	private int overridesForDate(Map<String, String> overriddenMap, List<BugEntry> bugList) {
 		int counter = 0;
 
-		Iterator<JSONBug> it = bugList.iterator();
+		Iterator<BugEntry> it = bugList.iterator();
 		while (it.hasNext()) {
 			if (overriddenMap.containsKey(it.next().getBugNumber())) {
 				counter++;

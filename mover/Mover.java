@@ -60,7 +60,6 @@ public class Mover {
 					}
 					cleanUp(newFile.getName(), destFolder);
 					result.append(file + "\n");
-//					file.renameTo(newFile);
 					merger.mergeIntoDest();
 				}
 			}

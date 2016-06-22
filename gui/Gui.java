@@ -9,13 +9,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.DateFormat;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -32,32 +28,17 @@ import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.border.Border;
 
-import jsonbuilder.JSONBuilder;
-import mover.Mover;
+import adt.UIDataBean;
+import constants.Constants;
+import processor.Processor;
 import props.PropertyManager;
-import tablebuilder.FolderParser;
-import tablebuilder.TableBuilder;
 
 //TODO: REFACTOR THE ENTIRE THING (YES, THE ENTIRE PROJECT)
 public class Gui {
 
-	public static final String JSON_TEMPO =  "JSON_tempo.txt";
-	
 	private final class ExitWindowListener extends WindowAdapter {
 		public void windowClosing(WindowEvent winEvt) {
-			PropertyManager.set("source", sourceText.getText());
-			PropertyManager.set("dest", destText.getText());
-			PropertyManager.set("time", timeText.getText());
-			PropertyManager.set("prefix", prefixText.getText());
-			PropertyManager.set("separator", separatorText.getText());
-			PropertyManager.set("fromDateJSON", fromDateText.getText());
-			PropertyManager.set("toDateJSON", toDateText.getText());
-			
-			try {
-				PropertyManager.dump();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			new Processor(getUIDataBean()).setProperties();
 			System.exit(0);
 		}
 	}
@@ -83,37 +64,7 @@ public class Gui {
 
 	private final class TimerListener implements ActionListener {
 		public void actionPerformed(ActionEvent evt) {
-
-			Mover reader = new Mover(sourceText.getText(), destText.getText(), prefixText.getText(),
-					separatorText.getText());
-			try {
-				DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-				Date date = new Date();
-				println(dateFormat.format(date));
-				String parseResult = reader.parseFolder();
-				print(parseResult);
-				if (parseResult != null && !"".equals(parseResult)) {
-					FolderParser parser = new FolderParser(destText.getText());
-					Map<String, Map<String, List<String>>> map = parser.parseFolder();
-					TableBuilder builder = new TableBuilder(destText.getText());
-					//JSONBuilder jsonBuilder = new JSONBuilder(map);
-					
-					PrintWriter out = new PrintWriter(destText.getText() + File.separator + "note_log.txt");
-					out.print(builder.build());
-					out.close();
-					
-//					PrintWriter out2 = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
-//					out2.print(jsonBuilder.buildJSON());
-//					out2.close();
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
-			} catch (ParseException e) {
-				e.printStackTrace();
-			}
-
+			new Processor(getUIDataBean()).executeTimerAction();
 		}
 	}
 
@@ -149,6 +100,38 @@ public class Gui {
 		}
 	}
 
+	/**
+	 * http://stackoverflow.com/questions/19834155/jtextarea-as-console
+	 *
+	 */
+	public class TextAreaOutputStream extends OutputStream {
+	    private JTextArea textControl;
+
+	    /**
+	     * Creates a new instance of TextAreaOutputStream which writes
+	     * to the specified instance of javax.swing.JTextArea control.
+	     *
+	     * @param control   A reference to the javax.swing.JTextArea
+	     *                  control to which the output must be redirected
+	     *                  to.
+	     */
+	    public TextAreaOutputStream( JTextArea control ) {
+	        textControl = control;
+	    }
+
+	    /**
+	     * Writes the specified byte as a character to the
+	     * javax.swing.JTextArea.
+	     *
+	     * @param   b   The byte to be written as character to the
+	     *              JTextArea.
+	     */
+	    public void write( int b ) throws IOException {
+	        // append the data as characters to the JTextArea control
+	        textControl.append( String.valueOf( ( char )b ) );
+	    }  
+	}
+	
 	private JFrame frame;
 	private JButton chooseSourceBtn;
 	private JButton chooseDestBtn;
@@ -171,8 +154,7 @@ public class Gui {
 		JPanel panel = new JPanel();
 		panel.setLayout(new GridLayout(0, 2));
 		JTabbedPane tabbedPane = new JTabbedPane();
-		
-		
+
 		buildComponents();
 		frame.setJMenuBar(buildMenu());
 
@@ -192,12 +174,15 @@ public class Gui {
 		tabbedPane.add("File Mover", panel);
 		corePanel.add(tabbedPane);
 		frame.add(corePanel, BorderLayout.NORTH);
-		
-		//TODO: create new panel, add to this tabbed pane as tab #2
+
 		tabbedPane.add("JSON generator", getJSONPanel());
 
 		consoleText = new JTextArea(15, 0);
 		consoleText.setEditable(false);
+		PrintStream out = new PrintStream( new TextAreaOutputStream( consoleText ) );
+		System.setOut( out );
+		System.setErr( out );
+
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		JScrollPane scrollPane = new JScrollPane(consoleText);
 		frame.add(scrollPane, BorderLayout.CENTER);
@@ -262,156 +247,129 @@ public class Gui {
 		startBtn.addActionListener(new StartButtonListener());
 	}
 
-	void print(String msg) {
-		consoleText.append(msg);
-	}
-
-	void println(String msg) {
-		consoleText.append(msg + "\n");
-	}
-
 	public String getSeparator() {
 		return separatorText.getText();
 	}
-	
-	private JMenuBar buildMenu(){
+
+	private JMenuBar buildMenu() {
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(getActionMenu());
 		return menuBar;
 	}
-	
-	private JMenu getActionMenu(){
+
+	private JMenu getActionMenu() {
 		JMenu menu = new JMenu("Actions");
 		menu.add(getCreateTableItem());
-//		menu.add(getJSON());
 		return menu;
 	}
-	
-	private JMenuItem getCreateTableItem(){
+
+	private JMenuItem getCreateTableItem() {
 		JMenuItem menuItem = new JMenuItem("Create note tables");
-		menuItem.addActionListener(new ActionListener(){
+		menuItem.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				TableBuilder builder = new TableBuilder(destText.getText());
-				PrintWriter out;
-				try {
-					out = new PrintWriter(destText.getText() + File.separator + "note_log.txt");
-					out.print(builder.build());
-					out.close();
-				} catch (IOException | ParseException e) {
-					e.printStackTrace();
-				}
+				new Processor(getUIDataBean()).createTable();
 			}
-			
+
 		});
 		return menuItem;
 	}
-//	private JMenuItem getJSON(){
-//		JMenuItem menuItem = new JMenuItem("Create JSON load file");
-//		menuItem.addActionListener(new ActionListener(){
-//			
-//			@Override
-//			public void actionPerformed(ActionEvent arg0) {
-//				PrintWriter out;
-//				try {
-//					FolderParser parser = new FolderParser(destText.getText());
-//					Map<String, Map<String, List<String>>> map = parser.parseFolder();
-//					JSONBuilder jsonBuilder= new JSONBuilder(map);
-//					out = new PrintWriter(destText.getText() + File.separator + "JSON_tempo.txt");
-//					out.print(jsonBuilder.buildJSON());
-//					out.close();
-//				} catch (IOException e) {
-//					e.printStackTrace();
-//				}
-//			}
-//			
-//		});
-//		return menuItem;
-//	}
-	
+
 	private JTextArea fromDateText;
 	private JTextArea toDateText;
-	
-	private JPanel getJSONPanel(){
+	private JTextArea defaultCommentText;
+	private JTextArea commentText;
+	private JTextArea roleText;
+
+	private JPanel getJSONPanel() {
 		JPanel panel = new JPanel(new GridLayout(0, 2));
 		Border border = BorderFactory.createLineBorder(Color.BLACK);
-		
+
 		panel.add(getDisabledJButton("From date (yyyymmdd)"));
 		fromDateText = new JTextArea(PropertyManager.readProperty("fromDateJSON"));
-		fromDateText.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+		fromDateText
+				.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
 		panel.add(fromDateText);
-		
+
 		panel.add(getDisabledJButton("To date (yyyymmdd)"));
 		toDateText = new JTextArea(PropertyManager.readProperty("toDateJSON"));
-		toDateText.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+		toDateText
+				.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
 		panel.add(toDateText);
+
+		panel.add(getDisabledJButton("Default Comment"));
+		defaultCommentText = new JTextArea(PropertyManager.readProperty("defaultComment"));
+		defaultCommentText.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+		panel.add(defaultCommentText);
+		panel.add(getDisabledJButton("Comment"));
+		commentText = new JTextArea(PropertyManager.readProperty("commentPosition"));
+		commentText.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+		panel.add(commentText);
+		panel.add(getDisabledJButton("Role"));
+		roleText = new JTextArea(PropertyManager.readProperty("role"));
+		roleText.setBorder(BorderFactory.createCompoundBorder(border, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+		panel.add(roleText);
 		
 		panel.add(getGenerateButton());
 		panel.add(getJSONConfigureButton());
-		
+
 		return panel;
 	}
-	
+
 	private JButton getGenerateButton() {
 		JButton button = new JButton();
 		button.setText("GENERATE");
-		button.addActionListener(new ActionListener(){
+		button.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				PrintWriter out;
-				DateFormat df = new SimpleDateFormat("yyyyMMdd");
-				try {
-					Date from = new Date(0);
-					Date to = new Date();
-					if (!"".equals(fromDateText.getText())){
-						from = df.parse(fromDateText.getText());
-					}
-					if (!"".equals(toDateText.getText())){
-						to = df.parse(toDateText.getText());
-					}
-					FolderParser parser = new FolderParser(destText.getText());
-					Map<String, Map<String, List<String>>> map = parser.parseFolder();
-					JSONBuilder jsonBuilder= new JSONBuilder(map, separatorText.getText(), destText.getText());
-					out = new PrintWriter(destText.getText() + File.separator + JSON_TEMPO);
-					out.print(jsonBuilder.buildJSON(from, to));
-					out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				} catch (ParseException e) {
-					e.printStackTrace();
-				}
+				new Processor(getUIDataBean()).generate();
 			}
-			
+
 		});
 		return button;
 	}
 
-	private JButton getDisabledJButton(String label){
+	private JButton getDisabledJButton(String label) {
 		JButton button = new JButton(label);
 		button.setEnabled(false);
 		return button;
 	}
 
-	private JButton getJSONConfigureButton(){
+	private JButton getJSONConfigureButton() {
 		JButton button = new JButton();
 		button.setText("CONFIGURE");
-		
-		button.addActionListener(new ActionListener(){
+
+		button.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				try {
-					new JSONConfigurer(destText.getText() + File.separator + JSON_TEMPO);
+					new JSONConfigurer(destText.getText() + File.separator + Constants.JSON_TEMPO);
 				} catch (IOException | ParseException e) {
 					e.printStackTrace();
 				}
 			}
-			
+
 		});
 		return button;
 	}
-	
-}
 
+	private UIDataBean getUIDataBean() {
+		UIDataBean result = new UIDataBean();
+		result.setDelay(timeText.getText());
+		result.setDestination(destText.getText());
+		result.setPrefix(prefixText.getText());
+		result.setSeparator(separatorText.getText());
+		result.setSource(sourceText.getText());
+
+		result.setGeneratorFromDate(fromDateText.getText());
+		result.setGeneratorToDate(toDateText.getText());
+		result.setGeneratorRole(roleText.getText());
+		result.setGeneratorCommentValue(commentText.getText());
+		result.setGeneratorDefaultComment(defaultCommentText.getText());
+		return result;
+	}
+
+}
