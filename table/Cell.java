@@ -49,5 +49,9 @@ public class Cell {
 	public int getCellHeight() {
 		return content.split("\n").length;
 	}
+	
+	public String toString(){
+		return getContent();
+	}
 
 }

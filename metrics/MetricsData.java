@@ -6,10 +6,33 @@ import java.util.Map;
 
 public class MetricsData {
 
+	String dataName;
+	String folderPath;
 	private Map<String, Integer> mappings;
 
-	public MetricsData() {
+	public String getFolderPath() {
+		return folderPath;
+	}
+
+	public void setFolderPath(String folderPath) {
+		this.folderPath = folderPath;
+	}
+
+	public String getDataName() {
+		return dataName;
+	}
+
+	public void setDataName(String dataName) {
+		this.dataName = dataName;
+	}
+
+	public MetricsData(String name) {
 		mappings = new HashMap<String, Integer>();
+		dataName = name;
+	}
+
+	public MetricsData() {
+		this(null);
 	}
 
 	public void add(String string) {
@@ -21,17 +44,19 @@ public class MetricsData {
 		}
 	}
 
-	public String getStringValue() {
+	public String getStringValue(boolean includeKey) {
 		StringBuilder result = new StringBuilder();
 		Iterator<String> it = mappings.keySet().iterator();
 		while (it.hasNext()) {
 			String key = it.next();
 			if (!"".equals(key.trim())) {
-				result.append(key + ":" + mappings.get(key) + "\n");
+				if (includeKey){
+					result.append(key + ":");
+				}
+				result.append(mappings.get(key) + "\n");
 			}
 		}
 		return result.toString();
-
 	}
-
+	
 }

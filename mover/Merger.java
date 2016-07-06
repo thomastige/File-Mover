@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Map;
 
+import adt.BugNote;
 import adt.TimeBlock;
 import parser.TimeBlockParser;
 
@@ -34,9 +35,10 @@ public class Merger {
 
 	public String merge() throws IOException {
 		StringBuilder result = new StringBuilder();
+		BugNote source =  new TimeBlockParser(src).getFileAsBugNote();
+		Map<Date, TimeBlock> srcMap = source.getTimeBlockMap();
+		Map<Date, TimeBlock> dstMap = new TimeBlockParser(dst).getFileAsBugNote().getTimeBlockMap();
 		
-		Map<Date, TimeBlock> srcMap = new TimeBlockParser(src).getFileAsTimeBlock();
-		Map<Date, TimeBlock> dstMap = new TimeBlockParser(dst).getFileAsTimeBlock();
 		for (Date date : srcMap.keySet()) {
 			if (dstMap.containsKey(date)) {
 				dstMap.replace(date, srcMap.get(date));
@@ -44,6 +46,7 @@ public class Merger {
 				dstMap.put(date, srcMap.get(date));
 			}
 		}
+		result.append(source.getMetaDataString() + "\n");
 		for (Date date : dstMap.keySet()) {
 			result.append(dstMap.get(date));
 		}

@@ -30,7 +30,7 @@ public class Processor {
 		Long time = System.currentTimeMillis();
 		try {
 			FolderParser parser = new FolderParser(ui.getDestination());
-			parser.setCommentPosition(Integer.parseInt(ui.getGeneratorCommentValue()));
+			parser.setCommentPosition(ui.getGeneratorCommentValue());
 			parser.setDefaultComment(ui.getGeneratorDefaultComment());
 			parser.setRole(ui.getGeneratorRole());
 			if (!"".equals(ui.getGeneratorFromDate())) {

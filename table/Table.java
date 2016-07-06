@@ -12,10 +12,11 @@ public class Table {
 	public static final String VERTICAL = "|";
 	public static final String CORNER = "+";
 	public static final String BLANK = " ";
-	
+
 	private Columns columns;
 	private List<Row> rows;
 	private Row currentRow;
+	private Row headers;
 	Map<Integer, List<Integer>> normalizedWidths;
 
 	public Table(Columns columns) {
@@ -24,7 +25,14 @@ public class Table {
 		currentRow = new Row();
 		normalizedWidths = new HashMap<Integer, List<Integer>>();
 	}
-	
+
+	public void addHeader(String content) {
+		if (headers == null) {
+			headers = new Row();
+		}
+		headers.addCell(content.toUpperCase(), Alignment.CENTER);
+	}
+
 	public Table() {
 		this(Columns.FREE);
 	}
@@ -39,8 +47,29 @@ public class Table {
 	public void addCell(String content) {
 		addCell(content, Alignment.LEFT);
 	}
+
 	public void addCell(String content, Alignment alignment) {
 		currentRow.addCell(content, alignment);
+	}
+	
+	public void addCell(String content, String column, Alignment alignment){
+		int position = -1;
+		
+		for (int i=0; i<headers.getCells().size(); ++i){
+			String header = headers.getCells().get(i).getContent();
+			if (header != null && header.equals(column.toUpperCase())){
+				position = i;
+				break;
+			}
+		}
+		if (position == -1){
+			addHeader(column);
+			position = headers.getCells().size() -1;
+		}
+		while (currentRow.getCells().size() <= position){
+			currentRow.addCell("");
+		}
+		currentRow.addCell(content, position, alignment);
 	}
 
 	public void closeTable() {
@@ -50,12 +79,17 @@ public class Table {
 	}
 
 	public String render() {
+		boolean hasHeaders = (headers != null);
+		if (hasHeaders) {
+			rows.add(0, headers);
+		}
 		normalizeCells();
 		StringBuilder renderBuilder = new StringBuilder();
 		Iterator<Row> it = rows.iterator();
 		int biggestRow = normalizeRowWidth();
 		int tableWidth = calculateTableWidth();
 		String buffer = null;
+
 		while (it.hasNext()) {
 			Row row = it.next();
 			String rowRepresentation = row.render(normalizedWidths, tableWidth + biggestRow - row.getCells().size());
@@ -67,6 +101,9 @@ public class Table {
 			buffer = rowRepresentation;
 		}
 		renderBuilder.append(createDelimiter(buffer, buffer, tableWidth + biggestRow));
+		if (hasHeaders) {
+			rows.remove(0);
+		}
 		return renderBuilder.toString();
 	}
 
@@ -115,22 +152,22 @@ public class Table {
 		}
 		return result;
 	}
-	
-	private void normalizeCells(){
-		if (columns == Columns.FIXED){
+
+	private void normalizeCells() {
+		if (columns == Columns.FIXED) {
 			Iterator<Row> it = rows.iterator();
 			int cellLength = 0;
-			while (it.hasNext()){
+			while (it.hasNext()) {
 				Row row = it.next();
 				int numberOfCells = row.getCells().size();
-				if (numberOfCells > cellLength){
+				if (numberOfCells > cellLength) {
 					cellLength = numberOfCells;
 				}
 			}
 			it = rows.iterator();
-			while (it.hasNext()){
+			while (it.hasNext()) {
 				Row row = it.next();
-				while (row.getCells().size() < cellLength){
+				while (row.getCells().size() < cellLength) {
 					row.addCell("");
 				}
 			}

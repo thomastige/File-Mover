@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import adt.BugNote;
 import adt.TimeBlock;
 import constants.Constants;
 
@@ -28,8 +29,8 @@ public class TimeBlockParser {
 		this.file = file;
 	}
 
-	public Map<Date, TimeBlock> getFileAsTimeBlock() throws IOException {
-		Map<Date, TimeBlock> result = new TreeMap<Date, TimeBlock>();
+	public BugNote getFileAsBugNote() throws IOException {
+		BugNote result = new BugNote();
 		if (new File(file).exists()) {
 			List<String> lines = Files.readAllLines(Paths.get(file));
 			Iterator<String> it = lines.iterator();
@@ -83,7 +84,7 @@ public class TimeBlockParser {
 									}
 									currentBlockContent = new StringBuilder();
 									if (currentBlock != null && currentBlock.getDate() != null) {
-										result.put(currentBlock.getDate(), currentBlock);
+										result.addEntry(currentBlock);
 									}
 									currentBlock = new TimeBlock(potentialTimeBlock.toString(), date);
 
@@ -102,8 +103,7 @@ public class TimeBlockParser {
 					}
 				} else {
 					if (line.startsWith(Constants.METADATA_START) && line.endsWith(Constants.METADATA_END)) {
-						currentBlock = new TimeBlock(line + "\n");
-						result.put(new Date(0), currentBlock);
+						result.setMetaData(line);
 						currentBlock = null;
 					} else {
 						currentBlockContent.append(line + "\n");
@@ -112,7 +112,7 @@ public class TimeBlockParser {
 			}
 			if (currentBlock != null) {
 				currentBlock.setContent(currentBlockContent.toString());
-				result.put(currentBlock.getDate(), currentBlock);
+				result.addEntry(currentBlock);
 			}
 		}
 		return result;

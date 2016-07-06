@@ -27,6 +27,15 @@ public class Row {
 		columnWidths.add(cell.getContent().length());
 	}
 
+	public void addCell(String content, int position, Alignment alignment) {
+		Cell cell = new Cell(content, alignment);
+		cells.set(position, cell);
+		while (columnWidths.size() <= position){
+			columnWidths.add(0);
+		}
+		columnWidths.set(position, cell.getContent().length());
+	}
+	
 	public String render(Map<Integer, List<Integer>> widthsMap, int tableSize) {
 		StringBuilder renderBuilder = new StringBuilder();
 		int height = getRowHeight();

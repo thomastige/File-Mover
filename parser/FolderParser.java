@@ -14,18 +14,17 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import adt.BugEntry;
+import adt.BugNote;
 import adt.TimeBlock;
 import constants.Constants;
-import props.PropertyManager;
 
 public class FolderParser {
 
 	private File fileToParse;
-	private int commentPosition;
+	private String commentPosition;
 	private String defaultComment;
 
 	private String role;
-
 
 	private Date fromDate;
 	private Date toDate;
@@ -102,49 +101,39 @@ public class FolderParser {
 	}
 
 	private void extractBugsFromFile(File file) throws IOException {
-		Map<Date, TimeBlock> timeBlockMap = new TimeBlockParser(file.getPath()).getFileAsTimeBlock();
-		Iterator<Date> it = timeBlockMap.keySet().iterator();
-		String metadata = null;
+		// TODO: replace the timeblockmap with a Bug class
+		BugNote bugNote = new TimeBlockParser(file.getPath()).getFileAsBugNote();
+		Iterator<Date> it = bugNote.getTimeBlockMap().keySet().iterator();
+		Map<String, String> metadata = bugNote.getMetadata();
 		while (it.hasNext()) {
 			Date date = it.next();
-			// TODO: create another structure for the metadata, this is very
-			// hackish.
-			if (date.equals(new Date(0))) {
-				metadata = timeBlockMap.get(date).getContent().split("\n")[0];
-			} else {
-				if (!date.after(toDate) && !date.before(fromDate)) {
-					Map<String, String> overrides = getOverrides(timeBlockMap.get(date));
-					BugEntry entry = new BugEntry();
-					entry.setFileName(file.getName());
-					entry.setDate(date);
-					entry.setBugNumber(file.getName().split(" - ")[0]);
-					entry.setBilled(Constants.DEFAULT_BILLED);
-					entry.setSprint(file.getParentFile().getName());
-					if (overrides.get(Constants.OVERRIDE_WORKED) != null) {
-						entry.setWorked(overrides.get(Constants.OVERRIDE_WORKED));
-						entry.setOverride(true);
-					}
-					if (overrides.get(Constants.OVERRIDE_COMMENT) != null) {
-						entry.setDescription(overrides.get(Constants.OVERRIDE_COMMENT));
-					} else {
-						entry.setDescription(getDefaultComment(metadata));
-					}
-					entry.setRole(role);
-					bugs.add(entry);
+			if (!date.after(toDate) && !date.before(fromDate)) {
+				Map<String, String> overrides = getOverrides(bugNote.getTimeBlockMap().get(date));
+				BugEntry entry = new BugEntry();
+				entry.setFileName(file.getName());
+				entry.setDate(date);
+				entry.setBugNumber(file.getName().split(" - ")[0]);
+				entry.setBilled(Constants.DEFAULT_BILLED);
+				entry.setSprint(file.getParentFile().getName());
+				if (overrides.get(Constants.OVERRIDE_WORKED) != null) {
+					entry.setWorked(overrides.get(Constants.OVERRIDE_WORKED));
+					entry.setOverride(true);
 				}
+				if (overrides.get(Constants.OVERRIDE_COMMENT) != null) {
+					entry.setDescription(overrides.get(Constants.OVERRIDE_COMMENT));
+				} else {
+					entry.setDescription(getDefaultComment(metadata));
+				}
+				entry.setRole(role);
+				bugs.add(entry);
 			}
 		}
 	}
 
-	private String getDefaultComment(String metadata) {
+	private String getDefaultComment(Map<String, String> metadata) {
 		String result = null;
 		if (metadata != null) {
-			metadata = metadata.replace(Constants.METADATA_START, "").replace(Constants.METADATA_END, "");
-			String[] splitMetadata = metadata.split(Constants.METADATA_SEPARATOR);
-			int pos = commentPosition - 1;
-			if (pos >=0 && pos < splitMetadata.length) {
-				result = splitMetadata[pos];
-			}
+			result = metadata.get(commentPosition);
 		}
 		if (result == null) {
 			result = defaultComment;
@@ -203,14 +192,13 @@ public class FolderParser {
 		bugs = result;
 	}
 
-	public int getCommentPosition() {
+	public String getCommentPosition() {
 		return commentPosition;
 	}
 
-	public void setCommentPosition(int commentPosition) {
+	public void setCommentPosition(String commentPosition) {
 		this.commentPosition = commentPosition;
 	}
-
 
 	public String getRole() {
 		return role;
@@ -219,7 +207,7 @@ public class FolderParser {
 	public void setRole(String role) {
 		this.role = role;
 	}
-	
+
 	public String getDefaultComment() {
 		return defaultComment;
 	}

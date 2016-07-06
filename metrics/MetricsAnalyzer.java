@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import constants.Constants;
+
 public class MetricsAnalyzer {
 
 	File dir;
@@ -27,14 +29,19 @@ public class MetricsAnalyzer {
 					if (files[j].isFile()) {
 						List<String> lines = Files.readAllLines(files[j].toPath());
 						String firstLine = lines.get(0);
-						if (firstLine.startsWith("[") && firstLine.endsWith("]")) {
-							String[] splitLine = firstLine.split("__");
-							for (int k = 1; k < splitLine.length - 1; ++k) {
-								if (metricsData.size() < (k)){
-									metricsData.add(new MetricsData());
-								}
+						if (firstLine.startsWith(Constants.METADATA_START)
+								&& firstLine.endsWith(Constants.METADATA_END)) {
+							String[] splitLine = firstLine.replace(Constants.METADATA_START, "")
+									.replace(Constants.METADATA_END, "").split(Constants.METADATA_SEPARATOR);
+							
+							for (int k = 0; k < splitLine.length; ++k) {
 								String datum = splitLine[k];
-								metricsData.get(k-1).add(datum);
+								String[] keyValuePair = datum.split(Constants.METADATA_NAME_SEPARATOR);
+								if (metricsData.size() < (k + 1)) {
+									metricsData.add(new MetricsData(keyValuePair.length == 2 ? keyValuePair[0] : null));
+								}
+								metricsData.get(k).setFolderPath(dirs[i].getPath());
+								metricsData.get(k).add(keyValuePair.length == 2 ? keyValuePair[1] : datum);
 							}
 						}
 					}
