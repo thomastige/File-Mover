@@ -3,7 +3,9 @@ package constants;
 public class Constants {
 
 	public static final String JSON_TEMPO = "JSON_tempo.txt";
-	public static final String NOTE_LOG = "note_log.txt";
+	public static final String CALENDAR_LOG = "calendar_log.txt";
+	public static final String METRICS_LOG = "metrics_log.txt";
+	public static final String HOURS_LOG = "hours_worked_log.txt";
 	public static final String METADATA_START = "[__";
 	public static final String METADATA_END = "__]";
 	public static final String METADATA_SEPARATOR = "__";

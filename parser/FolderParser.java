@@ -119,6 +119,7 @@ public class FolderParser {
 					entry.setWorked(overrides.get(Constants.OVERRIDE_WORKED));
 					entry.setOverride(true);
 				}
+				entry.setMetadata(metadata);
 				if (overrides.get(Constants.OVERRIDE_COMMENT) != null) {
 					entry.setDescription(overrides.get(Constants.OVERRIDE_COMMENT));
 				} else {
@@ -158,7 +159,7 @@ public class FolderParser {
 	}
 
 	private boolean isException(String fileName) {
-		return Constants.NOTE_LOG.equals(fileName) || Constants.JSON_TEMPO.equals(fileName);
+		return Constants.CALENDAR_LOG.equals(fileName) || Constants.METRICS_LOG.equals(fileName) || Constants.HOURS_LOG.equals(fileName) || Constants.JSON_TEMPO.equals(fileName);
 	}
 
 	public static boolean isInteger(String s) {

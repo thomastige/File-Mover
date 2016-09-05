@@ -3,6 +3,7 @@ package adt;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 
 public class BugEntry {
 
@@ -12,12 +13,12 @@ public class BugEntry {
 	private String billed;
 	private String description;
 	private String role;
-	// TODO: change override to boolean variable
 	private boolean override = false;
 	
 	private String fileName;
 	private String sprint;
-
+	private Map<String, String> metadata;
+	
 	public String getBugNumber() {
 		return bugNumber;
 	}
@@ -86,6 +87,14 @@ public class BugEntry {
 	
 	public void setSprint(String sprint) {
 		this.sprint = sprint;
+	}
+	
+	public Map<String, String> getMetadata() {
+		return metadata;
+	}
+	
+	public void setMetadata(Map<String, String> metadata) {
+		this.metadata = metadata;
 	}
 
 	public String toString() {

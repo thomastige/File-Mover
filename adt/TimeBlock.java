@@ -2,7 +2,6 @@ package adt;
 
 import java.util.Date;
 
-//TODO: Create "BugEntity" class that will contain a Metadata structure and a list of TimeBlock, then remove deprecated sign.
 public class TimeBlock {
 
 	private String timeStampBlock;

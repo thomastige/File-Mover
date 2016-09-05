@@ -269,7 +269,11 @@ public class Gui {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				new Processor(getUIDataBean()).createTable();
+				try {
+					new Processor(getUIDataBean()).createTables();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 
 		});

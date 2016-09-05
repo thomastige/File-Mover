@@ -54,6 +54,9 @@ public class Table {
 	
 	public void addCell(String content, String column, Alignment alignment){
 		int position = -1;
+		if (headers == null){
+			headers = new Row();
+		}
 		
 		for (int i=0; i<headers.getCells().size(); ++i){
 			String header = headers.getCells().get(i).getContent();

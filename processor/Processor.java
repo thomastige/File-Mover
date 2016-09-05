@@ -51,17 +51,28 @@ public class Processor {
 		System.out.println("Generated JSON load file in " + time + " ms.");
 	}
 
-	public void createTable() {
+	public void createTables() throws IOException {
 		TableBuilder builder = new TableBuilder(ui.getDestination());
+		
+		String calendarPath = ui.getDestination() + File.separator + Constants.CALENDAR_LOG;
+		String metricsPath = ui.getDestination() + File.separator + Constants.METRICS_LOG;
+		String hoursPath = ui.getDestination() + File.separator + Constants.HOURS_LOG;
 		PrintWriter out;
 		try {
 			Long time = System.currentTimeMillis();
-			out = new PrintWriter(ui.getDestination() + File.separator + Constants.NOTE_LOG);
+			out = new PrintWriter(calendarPath);
 			FolderParser parser = new FolderParser(ui.getDestination());
-			out.print(builder.build(parser.parseToList()));
+			List<BugEntry> bugs = parser.parseToList();
+			out.print(builder.buildCalendarLog(bugs));
+			out.close();
+			out = new PrintWriter(metricsPath);
+			out.print(builder.buildMetricsLog(bugs));
+			out.close();
+			out = new PrintWriter(hoursPath);
+			out.print(builder.buildHoursLog(bugs));
 			time = System.currentTimeMillis() - time;
 			out.close();
-			System.out.println("Generated a table in " + time + " ms.");
+			System.out.println("Generated tables in " + time + " ms.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -76,7 +87,7 @@ public class Processor {
 			String parseResult = reader.parseFolder();
 			System.out.print(parseResult);
 			if (parseResult != null && !"".equals(parseResult)) {
-				createTable();
+				createTables();
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
